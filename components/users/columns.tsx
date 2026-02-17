@@ -17,12 +17,23 @@ import api from "@/lib/axios"
 import { toast } from "sonner"
 
 export type User = {
-    id: string
-    name: string
+    _id: string
+    fullName?: string
     email: string
-    phone: string
-    status: "active" | "blocked" | "pending"
+    phoneNumber?: string
+    profilePhoto?: string | null
+    kundli?: string | null
+    exanthem?: string | null
+    is_verified: boolean
+    status: string
+    walletBalance: number
     createdAt: string
+    updatedAt: string
+    freeMinutes?: {
+        total: number
+        used: number
+        remaining: number
+    }
 }
 
 const UserActions = ({ user }: { user: User }) => {
@@ -30,11 +41,10 @@ const UserActions = ({ user }: { user: User }) => {
 
     const { mutate: toggleBlock, isPending } = useMutation({
         mutationFn: async () => {
-            const endpoint = user.status === 'blocked' ? '/users/unblock' : '/users/block';
-            await api.patch(endpoint, { id: user.id });
+            await api.patch(`/users/${user._id}/toggle-status`);
         },
         onSuccess: () => {
-            toast.success(`User ${user.status === 'blocked' ? 'unblocked' : 'blocked'} successfully`);
+            toast.success("User status updated successfully");
             queryClient.invalidateQueries({ queryKey: ["users"] });
         },
         onError: (error: any) => {
@@ -54,7 +64,7 @@ const UserActions = ({ user }: { user: User }) => {
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
-                    onClick={() => navigator.clipboard.writeText(user.id)}
+                    onClick={() => navigator.clipboard.writeText(user._id)}
                 >
                     Copy User ID
                 </DropdownMenuItem>
@@ -65,7 +75,7 @@ const UserActions = ({ user }: { user: User }) => {
                     disabled={isPending}
                     onClick={() => toggleBlock()}
                 >
-                    {user.status === 'blocked' ? 'Unblock User' : 'Block User'}
+                    Block User
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -74,16 +84,44 @@ const UserActions = ({ user }: { user: User }) => {
 
 export const columns: ColumnDef<User>[] = [
     {
-        accessorKey: "name",
+        accessorKey: "fullName",
         header: "Name",
+        cell: ({ row }: { row: Row<User> }) => {
+            const user = row.original
+            return (
+                <div>
+                    <p className="font-medium">{user.fullName || 'N/A'}</p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                </div>
+            )
+        }
     },
     {
-        accessorKey: "email",
-        header: "Email",
-    },
-    {
-        accessorKey: "phone",
+        accessorKey: "phoneNumber",
         header: "Phone",
+        cell: ({ row }: { row: Row<User> }) => {
+            return row.getValue("phoneNumber") || "N/A"
+        }
+    },
+    {
+        accessorKey: "is_verified",
+        header: "Verification",
+        cell: ({ row }: { row: Row<User> }) => {
+            const isVerified = row.getValue("is_verified") as boolean
+            return (
+                <Badge variant={isVerified ? "success" : "secondary"}>
+                    {isVerified ? "Verified" : "Unverified"}
+                </Badge>
+            )
+        },
+    },
+    {
+        accessorKey: "walletBalance",
+        header: "Wallet",
+        cell: ({ row }: { row: Row<User> }) => {
+            const balance = row.getValue("walletBalance") as number
+            return <span className="font-medium">₹{balance}</span>
+        }
     },
     {
         accessorKey: "status",
@@ -91,15 +129,7 @@ export const columns: ColumnDef<User>[] = [
         cell: ({ row }: { row: Row<User> }) => {
             const status = row.getValue("status") as string
             return (
-                <Badge
-                    variant={
-                        status === "active"
-                            ? "success"
-                            : status === "blocked"
-                                ? "destructive"
-                                : "secondary"
-                    }
-                >
+                <Badge variant={status === "Active" ? "success" : "secondary"}>
                     {status}
                 </Badge>
             )

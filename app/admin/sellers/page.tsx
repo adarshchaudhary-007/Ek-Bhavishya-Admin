@@ -27,7 +27,7 @@ export default function SellersPage() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
             ) : (
-                <DataTable columns={columns} data={data || []} searchKey="shopName" />
+                <DataTable columns={columns} data={data || []} searchKey="business_name" />
             )}
         </div>
     );

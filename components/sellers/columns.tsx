@@ -21,26 +21,73 @@ import api from "@/lib/axios"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 export type Seller = {
-    id: string
-    name: string
+    _id: string
+    business_name: string
+    fullname: string
     email: string
-    shopName: string
-    status: "active" | "rejected" | "pending"
-    joinedAt: string
+    phone_number: string
+    profile_image?: string | null
+    is_verified: boolean
+    is_approved: boolean
+    address: string
+    gst_number: string
+    adhar_number: string
+    status: string
+    createdAt: string
+    updatedAt: string
 }
 
 export const columns: ColumnDef<Seller>[] = [
     {
-        accessorKey: "shopName",
-        header: "Shop Name",
+        accessorKey: "business_name",
+        header: "Business Name",
+        cell: ({ row }: { row: Row<Seller> }) => {
+            const seller = row.original
+            return (
+                <div>
+                    <p className="font-medium">{seller.business_name}</p>
+                    <p className="text-sm text-gray-500">{seller.email}</p>
+                </div>
+            )
+        }
     },
     {
-        accessorKey: "name",
+        accessorKey: "fullname",
         header: "Owner Name",
+        cell: ({ row }: { row: Row<Seller> }) => {
+            return row.getValue("fullname") || "N/A"
+        }
     },
     {
-        accessorKey: "email",
-        header: "Email",
+        accessorKey: "phone_number",
+        header: "Phone",
+        cell: ({ row }: { row: Row<Seller> }) => {
+            return row.getValue("phone_number") || "N/A"
+        }
+    },
+    {
+        accessorKey: "is_verified",
+        header: "Verification",
+        cell: ({ row }: { row: Row<Seller> }) => {
+            const isVerified = row.getValue("is_verified") as boolean
+            return (
+                <Badge variant={isVerified ? "success" : "secondary"}>
+                    {isVerified ? "Verified" : "Unverified"}
+                </Badge>
+            )
+        },
+    },
+    {
+        accessorKey: "is_approved",
+        header: "Approval",
+        cell: ({ row }: { row: Row<Seller> }) => {
+            const isApproved = row.getValue("is_approved") as boolean
+            return (
+                <Badge variant={isApproved ? "success" : "secondary"}>
+                    {isApproved ? "Approved" : "Pending"}
+                </Badge>
+            )
+        },
     },
     {
         accessorKey: "status",
@@ -48,15 +95,7 @@ export const columns: ColumnDef<Seller>[] = [
         cell: ({ row }: { row: Row<Seller> }) => {
             const status = row.getValue("status") as string
             return (
-                <Badge
-                    variant={
-                        status === "active"
-                            ? "success"
-                            : status === "rejected"
-                                ? "destructive"
-                                : "secondary"
-                    }
-                >
+                <Badge variant={status === "Active" ? "success" : "secondary"}>
                     {status}
                 </Badge>
             )
@@ -74,20 +113,16 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
     const [openReject, setOpenReject] = useState(false);
     const queryClient = useQueryClient();
 
-    const { mutate: changeStatus, isPending } = useMutation({
-        mutationFn: async ({ status }: { status: 'active' | 'pending' }) => {
-            if (status === 'active') {
-                await api.patch('/sellers/approve', { id: seller.id });
-            } else {
-                await api.patch('/sellers/revert', { id: seller.id });
-            }
+    const { mutate: approveSeller, isPending } = useMutation({
+        mutationFn: async () => {
+            await api.patch(`/sellers/${seller._id}/approve`);
         },
-        onSuccess: (_, variables) => {
-            toast.success(`Seller status updated to ${variables.status}`);
+        onSuccess: () => {
+            toast.success("Seller approved successfully");
             queryClient.invalidateQueries({ queryKey: ['sellers'] });
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to update status');
+            toast.error(error.response?.data?.message || 'Failed to approve seller');
         }
     });
 
@@ -104,11 +139,11 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem>View Shop Details</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    {seller.status === 'pending' && (
+                    {!seller.is_approved && (
                         <>
                             <DropdownMenuItem
                                 className="text-green-600 cursor-pointer"
-                                onClick={() => changeStatus({ status: 'active' })}
+                                onClick={() => approveSeller()}
                                 disabled={isPending}
                             >
                                 Approve Seller
@@ -122,20 +157,12 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
                             </DropdownMenuItem>
                         </>
                     )}
-                    {seller.status === 'active' && (
+                    {seller.is_approved && (
                         <DropdownMenuItem
-                            onClick={() => changeStatus({ status: 'pending' })}
-                            disabled={isPending}
+                            className="text-destructive cursor-pointer"
+                            onClick={() => setOpenReject(true)}
                         >
-                            Revert to Pending
-                        </DropdownMenuItem>
-                    )}
-                    {seller.status === 'rejected' && (
-                        <DropdownMenuItem
-                            onClick={() => changeStatus({ status: 'pending' })}
-                            disabled={isPending}
-                        >
-                            Revert to Pending
+                            Deactivate Seller
                         </DropdownMenuItem>
                     )}
                 </DropdownMenuContent>
@@ -144,8 +171,8 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
             <RejectModal
                 isOpen={openReject}
                 onClose={() => setOpenReject(false)}
-                sellerId={seller.id}
-                sellerName={seller.name}
+                sellerId={seller._id}
+                sellerName={seller.fullname}
             />
         </>
     )

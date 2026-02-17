@@ -20,45 +20,140 @@ import api from "@/lib/axios"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 export type Astrologer = {
-    id: string
-    name: string
-    email: string
-    specialization: string
-    rating: number
-    status: "active" | "suspended" | "pending"
-    joinedAt: string
+    _id: string
+    personalDetails: {
+        name: string
+        email: string
+        phone: string
+        experience: number
+        languages: string[]
+        skills: string[]
+        pseudonym?: string
+        profileImage?: string
+    }
+    ratings: {
+        average: number
+        count: number
+        negativeReviewsCount: number
+    }
+    pricing: {
+        call: number
+        chat: number
+        video: number
+    }
+    availability: {
+        status: string
+        currentStatus: string
+        isCallAvailable: boolean
+        isChatAvailable: boolean
+        isVideoAvailable: boolean
+    }
+    verificationStatus: string
+    onboardingStatus: string
+    isApproved: boolean
+    walletBalance: number
+    callSettings: {
+        audioCallRate: number
+        videoCallRate: number
+    }
+    createdAt: string
 }
 
 export const columns: ColumnDef<Astrologer>[] = [
     {
-        accessorKey: "name",
+        accessorKey: "personalDetails.name",
         header: "Name",
-    },
-    {
-        accessorKey: "specialization",
-        header: "Specialization",
-    },
-    {
-        accessorKey: "rating",
-        header: "Rating",
         cell: ({ row }: { row: Row<Astrologer> }) => {
-            return <span>{row.getValue("rating")} ⭐</span>
+            const astrologer = row.original
+            return (
+                <div>
+                    <p className="font-medium">{astrologer.personalDetails.name}</p>
+                    <p className="text-sm text-gray-500">{astrologer.personalDetails.email}</p>
+                </div>
+            )
         }
     },
     {
-        accessorKey: "status",
-        header: "Status",
+        accessorKey: "personalDetails.skills",
+        header: "Skills",
         cell: ({ row }: { row: Row<Astrologer> }) => {
-            const status = row.getValue("status") as string
+            const skills = row.original.personalDetails.skills
+            return (
+                <div className="flex flex-wrap gap-1">
+                    {skills && skills.length > 0 ? (
+                        skills.slice(0, 2).map((skill, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                                {skill}
+                            </Badge>
+                        ))
+                    ) : (
+                        <span className="text-gray-400">-</span>
+                    )}
+                    {skills && skills.length > 2 && (
+                        <Badge variant="outline" className="text-xs">+{skills.length - 2}</Badge>
+                    )}
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "ratings.average",
+        header: "Rating",
+        cell: ({ row }: { row: Row<Astrologer> }) => {
+            const astrologer = row.original
+            return (
+                <div className="text-center">
+                    <p className="font-semibold">{astrologer.ratings.average.toFixed(1)} ⭐</p>
+                    <p className="text-xs text-gray-500">({astrologer.ratings.count})</p>
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "verificationStatus",
+        header: "Verification",
+        cell: ({ row }: { row: Row<Astrologer> }) => {
+            const status = row.original.verificationStatus
+            return (
+                <Badge
+                    variant={status === "Verified" ? "success" : "secondary"}
+                    className="text-xs"
+                >
+                    {status}
+                </Badge>
+            )
+        },
+    },
+    {
+        accessorKey: "onboardingStatus",
+        header: "Onboarding",
+        cell: ({ row }: { row: Row<Astrologer> }) => {
+            const status = row.original.onboardingStatus
             return (
                 <Badge
                     variant={
-                        status === "active"
+                        status === "Completed"
                             ? "success"
-                            : status === "suspended"
-                                ? "destructive"
-                                : "secondary"
+                            : status === "Pending"
+                                ? "secondary"
+                                : "destructive"
                     }
+                    className="text-xs"
+                >
+                    {status}
+                </Badge>
+            )
+        },
+    },
+    {
+        accessorKey: "availability.status",
+        header: "Status",
+        cell: ({ row }: { row: Row<Astrologer> }) => {
+            const status = row.original.availability.status
+            return (
+                <Badge
+                    variant={status === "online" ? "success" : "secondary"}
+                    className="text-xs"
                 >
                     {status}
                 </Badge>
@@ -80,9 +175,7 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
 
     const { mutate: unsuspend, isPending: isUnsuspending } = useMutation({
         mutationFn: async () => {
-            // Assuming endpoint is /astrologers/:id/unsuspend or similar based on task description
-            // The task list said: POST /astrologers/:astrologerId/unsuspend
-            await api.post(`/astrologers/${astrologer.id}/unsuspend`);
+            await api.post(`/astrologers/${astrologer._id}/unsuspend`);
         },
         onSuccess: () => {
             toast.success("Astrologer reactivated successfully");
@@ -107,31 +200,20 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
                     <DropdownMenuItem>View Profile</DropdownMenuItem>
                     <DropdownMenuItem>View Earnings</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    {astrologer.status !== 'suspended' && (
-                        <DropdownMenuItem
-                            className="text-destructive cursor-pointer"
-                            onClick={() => setOpenSuspend(true)}
-                        >
-                            Suspend Account
-                        </DropdownMenuItem>
-                    )}
-                    {astrologer.status === 'suspended' && (
-                        <DropdownMenuItem
-                            className="text-green-600 cursor-pointer"
-                            disabled={isUnsuspending}
-                            onClick={() => unsuspend()}
-                        >
-                            Reactivate Account
-                        </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem
+                        className="text-destructive cursor-pointer"
+                        onClick={() => setOpenSuspend(true)}
+                    >
+                        Suspend Account
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
             <SuspendModal
                 isOpen={openSuspend}
                 onClose={() => setOpenSuspend(false)}
-                astrologerId={astrologer.id}
-                astrologerName={astrologer.name}
+                astrologerId={astrologer._id}
+                astrologerName={astrologer.personalDetails.name}
             />
         </>
     )
