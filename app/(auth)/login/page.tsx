@@ -12,7 +12,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Moon, Star } from 'lucide-react';
-import api from '@/lib/axios';
 
 const loginSchema = z.object({
     email: z.string().email('Please enter a valid email address'),
@@ -43,31 +42,15 @@ export default function LoginPage() {
     const onSubmit = async (data: LoginFormValues) => {
         setLoading(true);
         try {
-            const response = await api.post('/login', {
+            await login({
                 email: data.email,
                 password: data.password,
             });
-
-            if (response.data.success) {
-                // Handle different possible response structures
-                const token = response.data.token || response.data.data?.token;
-                const admin = response.data.admin || response.data.user || response.data.data?.admin || response.data.data?.user;
-
-                if (!token) {
-                    console.error('Login success but no token received:', response.data);
-                    toast.error('Authentication failed: No token received');
-                    return;
-                }
-
-                console.log('Login successful, storing token');
-                login(token, admin);
-                toast.success('Logged in successfully');
-            } else {
-                toast.error(response.data.message || 'Login failed');
-            }
+            toast.success('Logged in successfully');
         } catch (error: any) {
-            console.error(error);
-            toast.error(error.response?.data?.message || 'Invalid email or password');
+            console.error('Login error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Invalid email or password';
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }

@@ -1,34 +1,14 @@
 'use client';
 
-import { columns, Course } from '@/components/courses/columns'; // Reusing columns for now, likely need specific ones with CRUD actions
+import { columns } from '@/components/courses/columns';
 import { DataTable } from '@/components/ui/data-table';
-import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-
-// Dummy data
-const dummyAdminCourses: Course[] = [
-    {
-        id: "admin-course-1",
-        title: "Official Astro Certification",
-        instructor: "Ek Bhavishya Admin",
-        price: 199.99,
-        status: "active",
-        students: 500,
-    },
-];
+import { useAdminCourses } from '@/lib/hooks/use-courses';
 
 export default function AdminCoursesPage() {
-    const [data, setData] = useState<Course[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        setTimeout(() => {
-            setData(dummyAdminCourses);
-            setLoading(false);
-        }, 1000);
-    }, []);
+    const { data, isLoading } = useAdminCourses({ page: 1, limit: 100 });
 
     return (
         <div className="space-y-4">
@@ -42,12 +22,12 @@ export default function AdminCoursesPage() {
                 </Link>
             </div>
 
-            {loading ? (
+            {isLoading ? (
                 <div className="flex items-center justify-center py-10">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
             ) : (
-                <DataTable columns={columns} data={data} searchKey="title" />
+                <DataTable columns={columns} data={data?.data || []} searchKey="title" />
             )}
         </div>
     );

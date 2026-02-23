@@ -21,53 +21,59 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
+import { useCreateAdminCourse, useUpdateAdminCourse } from "@/lib/hooks/use-courses"
 
 const moduleSchema = z.object({
+    _id: z.string().optional(),
     title: z.string().min(1, "Module title is required"),
     description: z.string(),
-    videoUrl: z.string().url("Must be a valid URL"),
-    duration: z.string(),
+    videoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    duration: z.string().optional(),
+    order: z.number().int().min(0),
 })
 
 const courseSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
     price: z.number().min(0, "Price must be positive"),
-    thumbnail: z.any().optional(), // For file upload handling later
+    category: z.string().min(1, "Category is required"),
+    level: z.enum(["Beginner", "Intermediate", "Advanced"]),
+    instructor: z.string().min(2, "Instructor name is required"),
+    thumbnail: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    tags: z.array(z.string()).default([]),
+    isFeatured: z.boolean().default(false),
     modules: z.array(moduleSchema),
 })
 
-type CourseFormValues = {
-    title: string;
-    description: string;
-    price: number;
-    thumbnail?: any;
-    modules: {
-        title: string;
-        description: string;
-        videoUrl: string;
-        duration: string;
-    }[];
-};
+type CourseFormValues = z.infer<typeof courseSchema>;
 
 interface CourseFormProps {
-    initialData?: CourseFormValues & { id: string };
+    initialData?: CourseFormValues & { _id: string };
 }
 
 export function CourseForm(props: CourseFormProps) {
     const { initialData } = props;
     const router = useRouter();
-    const [loading, setLoading] = useState(false);
 
     const form = useForm<CourseFormValues>({
         resolver: zodResolver(courseSchema),
-        defaultValues: initialData || {
-            title: "",
-            description: "",
-            price: 0,
-            modules: [
-                { title: "Introduction", description: "", videoUrl: "", duration: "" }
-            ],
+        defaultValues: {
+            title: initialData?.title || "",
+            description: initialData?.description || "",
+            price: initialData?.price || 0,
+            category: initialData?.category || "",
+            level: initialData?.level || "Beginner",
+            instructor: (initialData as any)?.instructor || "",
+            thumbnail: initialData?.thumbnail || "",
+            tags: initialData?.tags || [],
+            isFeatured: initialData?.isFeatured || false,
+            modules: initialData?.modules?.map((m, i) => ({
+                ...m,
+                order: m.order ?? i,
+                duration: m.duration?.toString() || "0" // Keep as string for input, convert on submit
+            })) || [
+                    { title: "Introduction", description: "", videoUrl: "", duration: "10", order: 0 }
+                ],
         },
     })
 
@@ -76,25 +82,38 @@ export function CourseForm(props: CourseFormProps) {
         name: "modules",
     })
 
+    const { mutate: createCourse, isPending: isCreating } = useCreateAdminCourse();
+    const { mutate: updateCourse, isPending: isUpdating } = useUpdateAdminCourse();
+
     async function onSubmit(data: CourseFormValues) {
-        setLoading(true);
-        try {
-            if (initialData) {
-                await api.put(`/courses/${initialData.id}`, data);
-                toast.success("Course updated successfully");
-            } else {
-                await api.post('/courses', data);
-                toast.success("Course created successfully");
-            }
-            router.push('/admin/courses');
-            router.refresh();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Something went wrong");
-            console.error(error);
-        } finally {
-            setLoading(false);
+        const formattedData: any = {
+            ...data,
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            modules: data.modules.map((m, i) => ({
+                ...m,
+                order: i,
+                duration: typeof m.duration === 'string' ? parseInt(m.duration) || 0 : m.duration
+            }))
+        };
+
+        if (initialData) {
+            updateCourse({ id: initialData._id, ...formattedData }, {
+                onSuccess: () => {
+                    router.push('/admin/admin-courses');
+                    router.refresh();
+                }
+            });
+        } else {
+            createCourse(formattedData, {
+                onSuccess: () => {
+                    router.push('/admin/admin-courses');
+                    router.refresh();
+                }
+            });
         }
     }
+
+    const isLoadingSubmit = isCreating || isUpdating;
 
     return (
         <Form {...form}>
@@ -106,7 +125,7 @@ export function CourseForm(props: CourseFormProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="title"
                                 render={({ field }) => (
                                     <FormItem>
@@ -119,7 +138,7 @@ export function CourseForm(props: CourseFormProps) {
                                 )}
                             />
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
@@ -132,7 +151,7 @@ export function CourseForm(props: CourseFormProps) {
                                 )}
                             />
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="price"
                                 render={({ field }) => (
                                     <FormItem>
@@ -150,20 +169,103 @@ export function CourseForm(props: CourseFormProps) {
                                     </FormItem>
                                 )}
                             />
-                            <FormItem>
-                                <FormLabel>Thumbnail</FormLabel>
-                                <FormControl>
-                                    <Input type="file" accept="image/*" />
-                                </FormControl>
-                                <FormDescription>Upload a course thumbnail image.</FormDescription>
-                            </FormItem>
+                            <FormField
+                                control={form.control as any}
+                                name="instructor"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Instructor Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g. Dr. Ramesh Kumar" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="category"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Category</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="e.g. Astrology" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="level"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Level</FormLabel>
+                                            <FormControl>
+                                                <select
+                                                    className="w-full p-2 border rounded-md bg-transparent"
+                                                    {...field}
+                                                >
+                                                    <option value="Beginner">Beginner</option>
+                                                    <option value="Intermediate">Intermediate</option>
+                                                    <option value="Advanced">Advanced</option>
+                                                </select>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <FormField
+                                control={form.control as any}
+                                name="thumbnail"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Thumbnail URL</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://..." {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control as any}
+                                name="isFeatured"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                        <FormControl>
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={field.onChange}
+                                                className="mt-1"
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>Featured Course</FormLabel>
+                                            <FormDescription>
+                                                This course will be highlighted on the platform.
+                                            </FormDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
                         </CardContent>
                     </Card>
 
                     <Card className="h-fit">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Modules</CardTitle>
-                            <Button type="button" variant="outline" size="sm" onClick={() => append({ title: "", description: "", videoUrl: "", duration: "" })}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => append({ title: "", description: "", videoUrl: "", duration: "10", order: fields.length })}
+                            >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Module
                             </Button>
@@ -221,8 +323,8 @@ export function CourseForm(props: CourseFormProps) {
                 </div>
 
                 <div className="flex justify-end">
-                    <Button type="submit" size="lg" disabled={loading}>
-                        {loading ? "Saving..." : props.initialData ? "Update Course" : "Create Course"}
+                    <Button type="submit" size="lg" disabled={isLoadingSubmit}>
+                        {isLoadingSubmit ? "Saving..." : props.initialData ? "Update Course" : "Create Course"}
                     </Button>
                 </div>
             </form>

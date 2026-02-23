@@ -14,28 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
-import { toast } from "sonner"
 import { RejectModal } from "./reject-modal"
-import Link from "next/link"
-import api from "@/lib/axios"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-
-export type Seller = {
-    _id: string
-    business_name: string
-    fullname: string
-    email: string
-    phone_number: string
-    profile_image?: string | null
-    is_verified: boolean
-    is_approved: boolean
-    address: string
-    gst_number: string
-    adhar_number: string
-    status: string
-    createdAt: string
-    updatedAt: string
-}
+import { SellerDetailModal } from "./seller-detail-modal"
+import { Eye, CheckCircle, XCircle, RotateCcw } from "lucide-react"
+import { useApproveSeller, useRejectSeller, useRevertSeller } from "@/lib/hooks/use-sellers"
+import { Seller } from "@/types"
 
 export const columns: ColumnDef<Seller>[] = [
     {
@@ -44,9 +27,9 @@ export const columns: ColumnDef<Seller>[] = [
         cell: ({ row }: { row: Row<Seller> }) => {
             const seller = row.original
             return (
-                <div>
-                    <p className="font-medium">{seller.business_name}</p>
-                    <p className="text-sm text-gray-500">{seller.email}</p>
+                <div className="max-w-[200px]">
+                    <p className="font-medium truncate" title={seller.business_name}>{seller.business_name}</p>
+                    <p className="text-xs text-gray-500 truncate" title={seller.email}>{seller.email}</p>
                 </div>
             )
         }
@@ -55,14 +38,14 @@ export const columns: ColumnDef<Seller>[] = [
         accessorKey: "fullname",
         header: "Owner Name",
         cell: ({ row }: { row: Row<Seller> }) => {
-            return row.getValue("fullname") || "N/A"
+            return <span className="text-sm">{row.getValue("fullname") || "N/A"}</span>
         }
     },
     {
         accessorKey: "phone_number",
         header: "Phone",
         cell: ({ row }: { row: Row<Seller> }) => {
-            return row.getValue("phone_number") || "N/A"
+            return <span className="text-sm">{row.getValue("phone_number") || "N/A"}</span>
         }
     },
     {
@@ -71,20 +54,8 @@ export const columns: ColumnDef<Seller>[] = [
         cell: ({ row }: { row: Row<Seller> }) => {
             const isVerified = row.getValue("is_verified") as boolean
             return (
-                <Badge variant={isVerified ? "success" : "secondary"}>
+                <Badge variant={isVerified ? "default" : "secondary"} className="text-[10px] font-bold uppercase py-0 px-1.5 h-5">
                     {isVerified ? "Verified" : "Unverified"}
-                </Badge>
-            )
-        },
-    },
-    {
-        accessorKey: "is_approved",
-        header: "Approval",
-        cell: ({ row }: { row: Row<Seller> }) => {
-            const isApproved = row.getValue("is_approved") as boolean
-            return (
-                <Badge variant={isApproved ? "success" : "secondary"}>
-                    {isApproved ? "Approved" : "Pending"}
                 </Badge>
             )
         },
@@ -93,13 +64,39 @@ export const columns: ColumnDef<Seller>[] = [
         accessorKey: "status",
         header: "Status",
         cell: ({ row }: { row: Row<Seller> }) => {
-            const status = row.getValue("status") as string
+            const seller = row.original;
+            const status = seller.status;
+            const isApproved = seller.is_approved;
+
+            // Determine display status and variant
+            let displayStatus: string = status;
+            let variant: "default" | "secondary" | "destructive" | "outline" = "secondary";
+
+            if (status === "Active" && isApproved) {
+                displayStatus = "Approved";
+                variant = "default";
+            } else if (status === "Blocked") {
+                displayStatus = "Rejected";
+                variant = "destructive";
+            } else if (status === "Inactive" && !isApproved) {
+                displayStatus = "Pending";
+                variant = "secondary";
+            }
+
             return (
-                <Badge variant={status === "Active" ? "success" : "secondary"}>
-                    {status}
+                <Badge variant={variant} className="text-[10px] font-bold uppercase py-0 px-1.5 h-5">
+                    {displayStatus}
                 </Badge>
             )
         },
+    },
+    {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }: { row: Row<Seller> }) => {
+            const date = new Date(row.getValue("createdAt"));
+            return <span className="text-sm">{date.toLocaleDateString()}</span>
+        }
     },
     {
         id: "actions",
@@ -111,68 +108,89 @@ export const columns: ColumnDef<Seller>[] = [
 
 const ActionCell = ({ seller }: { seller: Seller }) => {
     const [openReject, setOpenReject] = useState(false);
-    const queryClient = useQueryClient();
+    const [showDetails, setShowDetails] = useState(false);
 
-    const { mutate: approveSeller, isPending } = useMutation({
-        mutationFn: async () => {
-            await api.patch(`/sellers/${seller._id}/approve`);
-        },
-        onSuccess: () => {
-            toast.success("Seller approved successfully");
-            queryClient.invalidateQueries({ queryKey: ['sellers'] });
-        },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Failed to approve seller');
-        }
-    });
+    const approveMutation = useApproveSeller();
+    const rejectMutation = useRejectSeller();
+    const revertMutation = useRevertSeller();
+
+    const handleApprove = () => {
+        approveMutation.mutate(seller._id);
+    };
+
+    const handleReject = () => {
+        rejectMutation.mutate(seller._id);
+        setOpenReject(false);
+    };
+
+    const handleRevert = () => {
+        revertMutation.mutate(seller._id);
+    };
+
+    const isLoading = approveMutation.isPending || rejectMutation.isPending || revertMutation.isPending;
+    const isApproved = seller.is_approved && seller.status === "Active";
+    const isRejected = seller.status === "Blocked";
+    const isPending = !seller.is_approved && seller.status === "Inactive";
 
     return (
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isLoading}>
                         <span className="sr-only">Open menu</span>
                         <MoreHorizontal className="h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-[180px]">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem>View Shop Details</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetails(true)}>
+                        <Eye className="mr-2 h-4 w-4" /> View Details
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    {!seller.is_approved && (
+
+                    {isPending && (
                         <>
                             <DropdownMenuItem
-                                className="text-green-600 cursor-pointer"
-                                onClick={() => approveSeller()}
-                                disabled={isPending}
+                                className="text-green-600 cursor-pointer font-medium"
+                                onClick={handleApprove}
+                                disabled={isLoading}
                             >
-                                Approve Seller
+                                <CheckCircle className="mr-2 h-4 w-4" /> Approve Seller
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                                className="text-destructive cursor-pointer"
+                                className="text-destructive cursor-pointer font-medium"
                                 onClick={() => setOpenReject(true)}
-                                disabled={isPending}
+                                disabled={isLoading}
                             >
-                                Reject Seller
+                                <XCircle className="mr-2 h-4 w-4" /> Reject Seller
                             </DropdownMenuItem>
                         </>
                     )}
-                    {seller.is_approved && (
+
+                    {(isApproved || isRejected) && (
                         <DropdownMenuItem
-                            className="text-destructive cursor-pointer"
-                            onClick={() => setOpenReject(true)}
+                            className="text-blue-600 cursor-pointer font-medium"
+                            onClick={handleRevert}
+                            disabled={isLoading}
                         >
-                            Deactivate Seller
+                            <RotateCcw className="mr-2 h-4 w-4" /> Revert Status
                         </DropdownMenuItem>
                     )}
                 </DropdownMenuContent>
             </DropdownMenu>
 
+            <SellerDetailModal
+                isOpen={showDetails}
+                onClose={() => setShowDetails(false)}
+                sellerId={seller._id}
+            />
+
             <RejectModal
                 isOpen={openReject}
                 onClose={() => setOpenReject(false)}
-                sellerId={seller._id}
+                onConfirm={handleReject}
                 sellerName={seller.fullname}
+                loading={isLoading}
             />
         </>
     )

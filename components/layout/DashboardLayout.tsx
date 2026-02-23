@@ -38,15 +38,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex min-h-screen bg-background text-foreground">
-            {/* Desktop Sidebar */}
-            <div className="hidden border-r md:block">
+            {/* Desktop Sidebar - Fixed Position */}
+            <div className="hidden md:block">
                 <Sidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
             </div>
 
             {/* Main Content */}
-            <div className="flex flex-1 flex-col">
+            <div className={cn(
+                "flex flex-1 flex-col transition-all duration-300",
+                isCollapsed ? "md:ml-16" : "md:ml-64"
+            )}>
                 <Header />
-                <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+                <main className="flex-1 space-y-4 p-6 pt-6">
                     {children}
                 </main>
             </div>

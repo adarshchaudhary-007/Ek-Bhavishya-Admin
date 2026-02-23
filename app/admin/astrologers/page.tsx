@@ -11,7 +11,7 @@ export default function AstrologersPage() {
     const { data, isLoading } = useQuery({
         queryKey: ['astrologers'],
         queryFn: async () => {
-            const response = await api.get('/astrologers');
+            const response = await api.get('/api/v1/admin/astrologers');
             return response.data.data || [];
         }
     });

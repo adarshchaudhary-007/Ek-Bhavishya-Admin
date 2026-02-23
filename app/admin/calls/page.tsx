@@ -12,7 +12,7 @@ export default function CallsPage() {
     const { data: calls = [], isLoading } = useQuery({
         queryKey: ['calls'],
         queryFn: async () => {
-            const response = await api.get('/calls');
+            const response = await api.get('/api/v1/admin/calls');
             return response.data.data;
         }
     });

@@ -3,16 +3,19 @@
 import { CourseForm } from "@/components/courses/course-form"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/axios"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 
 export default function EditCoursePage() {
     const params = useParams()
+    const router = useRouter()
     const courseId = params.courseId as string
 
     const { data: course, isLoading } = useQuery({
         queryKey: ['course', courseId],
         queryFn: async () => {
-            const response = await api.get(`/courses/${courseId}`);
+            const response = await api.get(`/api/v1/admin/courses/${courseId}`);
             return response.data.data;
         },
         enabled: !!courseId
@@ -28,11 +31,20 @@ export default function EditCoursePage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h3 className="text-lg font-medium">Edit Course</h3>
-                <p className="text-sm text-muted-foreground">
-                    Update course details and modules.
-                </p>
+            <div className="flex items-center gap-4">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => router.back()}
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                    <h3 className="text-lg font-medium">Edit Course</h3>
+                    <p className="text-sm text-muted-foreground">
+                        Update course details and modules.
+                    </p>
+                </div>
             </div>
             <CourseForm initialData={course} />
         </div>

@@ -1,0 +1,2026 @@
+{
+  "info": {
+    "_postman_id": "77860f7c-3100-449e-b9fd-43ce11c88b83",
+    "name": "Admin API Collection",
+    "description": "Comprehensive Admin API for Astrology Backend - Notices, Blogs, Courses, Sellers",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45348348",
+    "_collection_link": "https://go.postman.co/collection/45348348-77860f7c-3100-449e-b9fd-43ce11c88b83?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"ChangeMe123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "login"
+              ]
+            },
+            "description": "Admin login with email and password. Returns JWT token and admin details with role validation."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@astrology.com\",\n  \"password\": \"admin123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"admin\": {\n    \"id\": \"507f1f77bcf86cd799439011\",\n    \"email\": \"admin@astrology.com\",\n    \"name\": \"Admin User\",\n    \"role\": \"admin\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Seller Management",
+      "item": [
+        {
+          "name": "Get Seller by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"697e0861fc54e9813202622e\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/sellers/get-by-id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "sellers",
+                "get-by-id"
+              ]
+            },
+            "description": "Get seller details by ID from request body"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"697e0861fc54e9813202622e\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/sellers/get-by-id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "sellers",
+                    "get-by-id"
+                  ]
+                },
+                "description": "Get seller details by ID from request body"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"_id\": \"507f1f77bcf86cd799439011\",\n  \"business_name\": \"Electronics Store\",\n  \"fullname\": \"John Doe\",\n  \"email\": \"seller@example.com\",\n  \"phone_number\": \"+91-9876543210\",\n  \"address\": \"123 Main St, Mumbai\",\n  \"gst_number\": \"GST123456789\",\n  \"status\": \"Inactive\",\n  \"is_approved\": false,\n  \"is_verified\": false,\n  \"createdAt\": \"2026-01-15T10:30:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Approve Seller",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"697e0861fc54e9813202622e\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/sellers/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "sellers",
+                "approve"
+              ]
+            },
+            "description": "Approve a seller - Changes status to Active and sets is_approved to true"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"697e0861fc54e9813202622e\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/sellers/approve",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "sellers",
+                    "approve"
+                  ]
+                },
+                "description": "Approve a seller - Changes status to Active and sets is_approved to true"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Seller approved successfully\",\n  \"seller\": {\n    \"_id\": \"507f1f77bcf86cd799439011\",\n    \"business_name\": \"Electronics Store\",\n    \"fullname\": \"John Doe\",\n    \"email\": \"seller@example.com\",\n    \"status\": \"Active\",\n    \"is_approved\": true,\n    \"is_verified\": true,\n    \"createdAt\": \"2026-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2026-01-30T15:45:30.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reject Seller",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"507f1f77bcf86cd799439011\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/sellers/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "sellers",
+                "reject"
+              ]
+            },
+            "description": "Reject a seller - Changes status to Blocked"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"507f1f77bcf86cd799439011\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/sellers/reject",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "sellers",
+                    "reject"
+                  ]
+                },
+                "description": "Reject a seller - Changes status to Blocked"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Seller rejected\",\n  \"seller\": {\n    \"_id\": \"507f1f77bcf86cd799439011\",\n    \"business_name\": \"Electronics Store\",\n    \"status\": \"Blocked\",\n    \"is_approved\": false\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Revert Seller Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"507f1f77bcf86cd799439011\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/sellers/revert",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "sellers",
+                "revert"
+              ]
+            },
+            "description": "Toggle seller status between Approved and Rejected"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"507f1f77bcf86cd799439011\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/sellers/revert",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "sellers",
+                    "revert"
+                  ]
+                },
+                "description": "Toggle seller status between Approved and Rejected"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Seller reverted from Approved to Rejected\",\n  \"seller\": {...},\n  \"previousStatus\": \"Approved\",\n  \"currentStatus\": \"Rejected\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "seller register",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Sellers",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}} /api/v1/seller/admin/all-sellers",
+              "host": [
+                "{{base_url}} "
+              ],
+              "path": [
+                "api",
+                "v1",
+                "seller",
+                "admin",
+                "all-sellers"
+              ]
+            },
+            "description": "Get list of all sellers with optional status filter"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}} /api/v1/seller/admin/all-sellers",
+                  "host": [
+                    "{{base_url}} "
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "seller",
+                    "admin",
+                    "all-sellers"
+                  ]
+                },
+                "description": "Get list of all sellers with optional status filter"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"507f1f77bcf86cd799439011\",\n      \"business_name\": \"Electronics Store\",\n      \"fullname\": \"John Doe\",\n      \"email\": \"seller@example.com\",\n      \"status\": \"Inactive\",\n      \"is_approved\": false,\n      \"is_verified\": false,\n      \"createdAt\": \"2026-01-15T10:30:00.000Z\",\n      \"display_status\": \"Pending\"\n    },\n    {\n      \"_id\": \"507f1f77bcf86cd799439012\",\n      \"business_name\": \"Fashion Hub\",\n      \"fullname\": \"Jane Smith\",\n      \"email\": \"seller2@example.com\",\n      \"status\": \"Active\",\n      \"is_approved\": true,\n      \"is_verified\": true,\n      \"createdAt\": \"2026-01-10T14:20:00.000Z\",\n      \"display_status\": \"Approved\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notice Management",
+      "item": [
+        {
+          "name": "Create Notice",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hi this is a ofer\",\n  \"message\": \"50% off on every offer\",\n  \"type\": \"payment_notice\",\n  \"user_ids\": [\"697e0861fc54e9813202622e\"],\n  \"email_notification\": true,\n  \"push_notification\": false,\n  \"in_app_notification\": true,\n  \"schedule_send\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/notices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "notices"
+              ]
+            },
+            "description": "Create a new notice and send notifications to specified users"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Hi this is a ofer\",\n  \"message\": \"50% off on every offer\",\n  \"type\": \"payment_notice\",\n  \"user_ids\": [\"697e0861fc54e9813202622e\"],\n  \"email_notification\": true,\n  \"push_notification\": false,\n  \"in_app_notification\": true,\n  \"schedule_send\": null\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/notices",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "notices"
+                  ]
+                },
+                "description": "Create a new notice and send notifications to specified users"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Notice created and sent to 3 users.\",\n  \"notice\": {\n    \"id\": \"507f1f77bcf86cd799439100\",\n    \"title\": \"System Maintenance Alert\",\n    \"message\": \"The system will undergo maintenance on January 31, 2026 from 2 AM to 4 AM IST\",\n    \"sentCount\": 3\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Notices",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/notices?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "notices"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get paginated list of all notices"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/notices?page=1&limit=10",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "notices"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Get paginated list of all notices"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"507f1f77bcf86cd799439100\",\n      \"title\": \"System Maintenance Alert\",\n      \"message\": \"The system will undergo maintenance on January 31, 2026 from 2 AM to 4 AM IST\",\n      \"sentCount\": 3,\n      \"createdAt\": \"2026-01-30T12:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Notice by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"noticeId\": \"6995576351523d477f96250e\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/notices/get-by-id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "notices",
+                "get-by-id"
+              ]
+            },
+            "description": "Get notice details with list of user IDs it was sent to"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"noticeId\": \"6995576351523d477f96250e\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/notices/get-by-id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "notices",
+                    "get-by-id"
+                  ]
+                },
+                "description": "Get notice details with list of user IDs it was sent to"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"507f1f77bcf86cd799439100\",\n    \"title\": \"System Maintenance Alert\",\n    \"message\": \"The system will undergo maintenance on January 31, 2026 from 2 AM to 4 AM IST\",\n    \"sentCount\": 3,\n    \"createdAt\": \"2026-01-30T12:00:00.000Z\",\n    \"user_ids\": [\n      \"507f1f77bcf86cd799439001\",\n      \"507f1f77bcf86cd799439002\",\n      \"507f1f77bcf86cd799439003\"\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Notice",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"noticeId\": \"507f1f77bcf86cd799439100\",\n  \"title\": \"URGENT: System Maintenance Extended\",\n  \"message\": \"The system maintenance has been extended. New time: 2 AM to 6 AM IST\",\n  \"user_ids\": [\n    \"507f1f77bcf86cd799439001\",\n    \"507f1f77bcf86cd799439002\",\n    \"507f1f77bcf86cd799439003\",\n    \"507f1f77bcf86cd799439004\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/notices/update",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "notices",
+                "update"
+              ]
+            },
+            "description": "Update notice and re-notify users"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"noticeId\": \"507f1f77bcf86cd799439100\",\n  \"title\": \"URGENT: System Maintenance Extended\",\n  \"message\": \"The system maintenance has been extended. New time: 2 AM to 6 AM IST\",\n  \"user_ids\": [\n    \"507f1f77bcf86cd799439001\",\n    \"507f1f77bcf86cd799439002\",\n    \"507f1f77bcf86cd799439003\",\n    \"507f1f77bcf86cd799439004\"\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/notices/update",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "notices",
+                    "update"
+                  ]
+                },
+                "description": "Update notice and re-notify users"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Notice updated and re-sent to 4 users.\",\n  \"notice\": {\n    \"id\": \"507f1f77bcf86cd799439100\",\n    \"title\": \"URGENT: System Maintenance Extended\",\n    \"message\": \"The system maintenance has been extended. New time: 2 AM to 6 AM IST\",\n    \"sentCount\": 4\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Notice",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"noticeId\": \"507f1f77bcf86cd799439100\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/notices/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "notices",
+                "delete"
+              ]
+            },
+            "description": "Delete notice and all related notifications"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"noticeId\": \"507f1f77bcf86cd799439100\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/notices/delete",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "notices",
+                    "delete"
+                  ]
+                },
+                "description": "Delete notice and all related notifications"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Notice deleted and all notifications removed.\",\n  \"deletedNotificationCount\": 4\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Notifications by Notice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"noticeId\": \"507f1f77bcf86cd799439100\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/notices/get-notifications?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "notices",
+                "get-notifications"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all notifications sent for a specific notice (admin audit)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"noticeId\": \"507f1f77bcf86cd799439100\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/notices/get-notifications?page=1&limit=10",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "notices",
+                    "get-notifications"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Get all notifications sent for a specific notice (admin audit)"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"507f1f77bcf86cd799439200\",\n      \"user_id\": \"507f1f77bcf86cd799439001\",\n      \"notice_id\": \"507f1f77bcf86cd799439100\",\n      \"title\": \"System Maintenance Alert\",\n      \"message\": \"The system will undergo maintenance...\",\n      \"type\": \"GENERAL\",\n      \"isRead\": true,\n      \"createdAt\": \"2026-01-30T12:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 4,\n    \"page\": 1,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Blog Management",
+      "item": [
+        {
+          "name": "Get All Blogs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/blogs?status=Pending&page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "blogs"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Pending",
+                  "description": "Filter by status: Pending, Approved, Rejected"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get paginated list of blogs pending approval.\n\n### How to run this request\n\n**Method**\n- `GET`\n\n**URL**\n- `{{base_url}}/api/v1/admin/blogs?status=Rejected&page=1&limit=10`\n\n`{{base_url}}` is a variable that should point to your admin backend base URL (for example, your staging or production API host).\n\n**Required headers**\n- `Authorization: Bearer {{token}}`  \n  or  \n  `Authorization: Bearer {{admin_token}}`  \n  Use an admin access token stored in either `{{token}}` or `{{admin_token}}`.\n- `Content-Type: application/json`\n\n**Query parameters**\nThis endpoint supports pagination and status filtering. Typical values observed in related blog requests in this workspace are:\n\n- `status` — Filter blogs by moderation status. Common values:\n  - `Rejected`\n  - `Pending`\n  - `Approved`\n- `page` — Page number for pagination (e.g., `1`).\n- `limit` — Number of items per page (e.g., `10`).\n- `search` — Optional search term to filter blogs by text (e.g., `mercury`).\n\n**Typical admin usage**\n- To fetch rejected blogs (as currently configured):\n  - `status=Rejected&page=1&limit=10`\n- To review pending blogs for approval:\n  - change `status` to `Pending` and keep pagination params as needed.\n- To see approved blogs:\n  - change `status` to `Approved`.\n- To search within any of the above lists:\n  - add `search` (for example: `search=mercury`)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/blogs?status=Pending&page=1&limit=10",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "blogs"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "Pending",
+                      "description": "Filter by status: Pending, Approved, Rejected"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Get paginated list of blogs pending approval.\n\n### How to run this request\n\n**Method**\n- `GET`\n\n**URL**\n- `{{base_url}}/api/v1/admin/blogs?status=Rejected&page=1&limit=10`\n\n`{{base_url}}` is a variable that should point to your admin backend base URL (for example, your staging or production API host).\n\n**Required headers**\n- `Authorization: Bearer {{token}}`  \n  or  \n  `Authorization: Bearer {{admin_token}}`  \n  Use an admin access token stored in either `{{token}}` or `{{admin_token}}`.\n- `Content-Type: application/json`\n\n**Query parameters**\nThis endpoint supports pagination and status filtering. Typical values observed in related blog requests in this workspace are:\n\n- `status` — Filter blogs by moderation status. Common values:\n  - `Rejected`\n  - `Pending`\n  - `Approved`\n- `page` — Page number for pagination (e.g., `1`).\n- `limit` — Number of items per page (e.g., `10`).\n- `search` — Optional search term to filter blogs by text (e.g., `mercury`).\n\n**Typical admin usage**\n- To fetch rejected blogs (as currently configured):\n  - `status=Rejected&page=1&limit=10`\n- To review pending blogs for approval:\n  - change `status` to `Pending` and keep pagination params as needed.\n- To see approved blogs:\n  - change `status` to `Approved`.\n- To search within any of the above lists:\n  - add `search` (for example: `search=mercury`)."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"507f1f77bcf86cd799439300\",\n      \"title\": \"10 Astrological Remedies for Love\",\n      \"author\": {\n        \"_id\": \"507f1f77bcf86cd799439301\",\n        \"personalDetails\": {\n          \"name\": \"Dr. Rajesh Kumar\",\n          \"email\": \"rajesh@example.com\"\n        }\n      },\n      \"status\": \"Pending\",\n      \"createdAt\": \"2026-01-28T10:00:00.000Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Blog by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"697e06a0182743936eb3a558\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/blogs/get-by-id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "blogs",
+                "get-by-id"
+              ]
+            },
+            "description": "Get full blog details for review"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"697e06a0182743936eb3a558\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/blogs/get-by-id",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "blogs",
+                    "get-by-id"
+                  ]
+                },
+                "description": "Get full blog details for review"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"blog\": {\n    \"_id\": \"507f1f77bcf86cd799439300\",\n    \"title\": \"10 Astrological Remedies for Love\",\n    \"content\": \"In this blog, we explore 10 powerful astrological remedies...\",\n    \"author\": {\n      \"_id\": \"507f1f77bcf86cd799439301\",\n      \"personalDetails\": {\n        \"name\": \"Dr. Rajesh Kumar\",\n        \"email\": \"rajesh@example.com\"\n      }\n    },\n    \"status\": \"Pending\",\n    \"createdAt\": \"2026-01-28T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Approve Blog",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"697e06a0182743936eb3a558\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/blogs/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "blogs",
+                "approve"
+              ]
+            },
+            "description": "Approve a blog for publication"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"697e06a0182743936eb3a558\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/blogs/approve",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "blogs",
+                    "approve"
+                  ]
+                },
+                "description": "Approve a blog for publication"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Blog approved successfully.\",\n  \"blog\": {\n    \"_id\": \"507f1f77bcf86cd799439300\",\n    \"title\": \"10 Astrological Remedies for Love\",\n    \"status\": \"Approved\",\n    \"author\": {...}\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reject Blog",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"507f1f77bcf86cd799439300\",\n  \"rejectionReason\": \"Content contains inappropriate material. Please revise and resubmit.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/blogs/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "blogs",
+                "reject"
+              ]
+            },
+            "description": "Reject a blog with reason for rejection"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"507f1f77bcf86cd799439300\",\n  \"rejectionReason\": \"Content contains inappropriate material. Please revise and resubmit.\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/blogs/reject",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "blogs",
+                    "reject"
+                  ]
+                },
+                "description": "Reject a blog with reason for rejection"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Blog rejected successfully.\",\n  \"blog\": {\n    \"_id\": \"507f1f77bcf86cd799439300\",\n    \"title\": \"10 Astrological Remedies for Love\",\n    \"status\": \"Rejected\",\n    \"rejectionReason\": \"Content contains inappropriate material. Please revise and resubmit.\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Course Management",
+      "item": [
+        {
+          "name": "Approve Course",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"698066add6d272ac44201143\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/courses/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "courses",
+                "approve"
+              ]
+            },
+            "description": "Approve an astrologer's course for publication"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"698066add6d272ac44201143\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/courses/approve",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "courses",
+                    "approve"
+                  ]
+                },
+                "description": "Approve an astrologer's course for publication"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Course approved successfully.\",\n  \"course\": {\n    \"_id\": \"507f1f77bcf86cd799439400\",\n    \"title\": \"Vedic Astrology Mastery\",\n    \"status\": \"Approved\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reject Course",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"507f1f77bcf86cd799439400\",\n  \"rejectionReason\": \"Course content needs more practical examples. Please revise and resubmit.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/courses/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "courses",
+                "reject"
+              ]
+            },
+            "description": "Reject a course with reason"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"507f1f77bcf86cd799439400\",\n  \"rejectionReason\": \"Course content needs more practical examples. Please revise and resubmit.\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/courses/reject",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "courses",
+                    "reject"
+                  ]
+                },
+                "description": "Reject a course with reason"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Course rejected successfully.\",\n  \"course\": {\n    \"_id\": \"507f1f77bcf86cd799439400\",\n    \"title\": \"Vedic Astrology Mastery\",\n    \"status\": \"Rejected\",\n    \"rejectionReason\": \"Course content needs more practical examples. Please revise and resubmit.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Admin Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Basic Astrology for Beginners\",\n  \"description\": \"A comprehensive guide to understanding basic astrology concepts\",\n  \"price\": 2999,\n  \"category\": \"Astrology\",\n  \"level\": \"Beginner\",\n  \"modules\": [],\n  \"thumbnail\": \"https://example.com/image.jpg\",\n  \"tags\": [\"astrology\", \"learning\", \"beginners\"],\n  \"isFeatured\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/courses/admin-courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "courses",
+                "admin-courses"
+              ]
+            },
+            "description": "Create a new course directly by admin"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Basic Astrology for Beginners\",\n  \"description\": \"A comprehensive guide to understanding basic astrology concepts\",\n  \"price\": 2999,\n  \"category\": \"Astrology\",\n  \"level\": \"Beginner\",\n  \"modules\": [],\n  \"thumbnail\": \"https://example.com/image.jpg\",\n  \"tags\": [\"astrology\", \"learning\", \"beginners\"],\n  \"isFeatured\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/courses/admin-courses",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "courses",
+                    "admin-courses"
+                  ]
+                },
+                "description": "Create a new course directly by admin"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Admin course created successfully\",\n  \"course\": {\n    \"_id\": \"507f1f77bcf86cd799439500\",\n    \"title\": \"Basic Astrology for Beginners\",\n    \"price\": 2999,\n    \"status\": \"Active\",\n    \"createdByAdmin\": \"507f1f77bcf86cd799439011\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Admin Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/courses/admin-courses/list?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "courses",
+                "admin-courses",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get list of all admin-created courses"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/courses/admin-courses/list?page=1&limit=10",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "courses",
+                    "admin-courses",
+                    "list"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Get list of all admin-created courses"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"_id\": \"507f1f77bcf86cd799439500\",\n      \"title\": \"Basic Astrology for Beginners\",\n      \"price\": 2999,\n      \"status\": \"Active\",\n      \"createdByAdmin\": \"507f1f77bcf86cd799439011\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Admin Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"507f1f77bcf86cd799439500\",\n  \"title\": \"Intermediate Astrology for Learners\",\n  \"description\": \"An updated comprehensive guide\",\n  \"price\": 3999,\n  \"level\": \"Intermediate\",\n  \"isFeatured\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/courses/admin-courses/update",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "courses",
+                "admin-courses",
+                "update"
+              ]
+            },
+            "description": "Update an admin-created course"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"507f1f77bcf86cd799439500\",\n  \"title\": \"Intermediate Astrology for Learners\",\n  \"description\": \"An updated comprehensive guide\",\n  \"price\": 3999,\n  \"level\": \"Intermediate\",\n  \"isFeatured\": false\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/courses/admin-courses/update",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "courses",
+                    "admin-courses",
+                    "update"
+                  ]
+                },
+                "description": "Update an admin-created course"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Admin course updated successfully\",\n  \"course\": {\n    \"_id\": \"507f1f77bcf86cd799439500\",\n    \"title\": \"Intermediate Astrology for Learners\",\n    \"price\": 3999,\n    \"level\": \"Intermediate\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Admin Course",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"507f1f77bcf86cd799439500\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/courses/admin-courses/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "courses",
+                "admin-courses",
+                "delete"
+              ]
+            },
+            "description": "Delete an admin-created course"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"507f1f77bcf86cd799439500\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/courses/admin-courses/delete",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "courses",
+                    "admin-courses",
+                    "delete"
+                  ]
+                },
+                "description": "Delete an admin-created course"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Admin course deleted successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "get All Course & Search",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Astrologer Management",
+      "item": [
+        {
+          "name": "Suspend Astrologer",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Dashboard stats",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "consultation stats",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Revenue Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/dashboard/revenue-stats?startDate=2025-12-31&endDate=2026-02-01",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "dashboard",
+                "revenue-stats"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-12-31"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-02-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Top Astrologers",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Report Analatics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/reports/daily-usage?startDate&endDate&format",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "reports",
+                "daily-usage"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": null,
+                  "type": "text"
+                },
+                {
+                  "key": "endDate",
+                  "value": null,
+                  "type": "text"
+                },
+                {
+                  "key": "format",
+                  "value": null,
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User Active or new",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "description": "JWT token from admin login - automatically set after login"
+    }
+  ]
+}

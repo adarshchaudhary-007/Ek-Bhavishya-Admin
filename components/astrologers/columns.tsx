@@ -18,6 +18,8 @@ import { SuspendModal } from "./suspend-modal"
 import { toast } from "sonner"
 import api from "@/lib/axios"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { AstrologerDetailModal } from "./astrologer-detail-modal"
+import { Eye, Edit, Trash2, ShieldCheck, ShieldAlert, BadgeIndianRupee } from "lucide-react"
 
 export type Astrologer = {
     _id: string
@@ -62,6 +64,7 @@ export type Astrologer = {
 export const columns: ColumnDef<Astrologer>[] = [
     {
         accessorKey: "personalDetails.name",
+        id: "name",
         header: "Name",
         cell: ({ row }: { row: Row<Astrologer> }) => {
             const astrologer = row.original
@@ -81,7 +84,7 @@ export const columns: ColumnDef<Astrologer>[] = [
             return (
                 <div className="flex flex-wrap gap-1">
                     {skills && skills.length > 0 ? (
-                        skills.slice(0, 2).map((skill, idx) => (
+                        skills.slice(0, 2).map((skill: string, idx: number) => (
                             <Badge key={idx} variant="outline" className="text-xs">
                                 {skill}
                             </Badge>
@@ -171,18 +174,36 @@ export const columns: ColumnDef<Astrologer>[] = [
 // Separate component to handle state for the modal
 const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
     const [openSuspend, setOpenSuspend] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
     const queryClient = useQueryClient();
+
+    const isSuspended = astrologer.availability.status === 'suspended' || !astrologer.isApproved;
 
     const { mutate: unsuspend, isPending: isUnsuspending } = useMutation({
         mutationFn: async () => {
             await api.post(`/astrologers/${astrologer._id}/unsuspend`);
         },
         onSuccess: () => {
-            toast.success("Astrologer reactivated successfully");
+            toast.success("Astrologer activated successfully");
             queryClient.invalidateQueries({ queryKey: ['astrologers'] });
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || "Failed to reactivate");
+        onError: (error: Error) => {
+            const message = (error as any).response?.data?.message || "Failed to activate";
+            toast.error(message);
+        }
+    });
+
+    const { mutate: deleteAstrologer, isPending: isDeleting } = useMutation({
+        mutationFn: async () => {
+            await api.delete(`/astrologers/${astrologer._id}`);
+        },
+        onSuccess: () => {
+            toast.success("Astrologer deleted successfully");
+            queryClient.invalidateQueries({ queryKey: ['astrologers'] });
+        },
+        onError: (error: Error) => {
+            const message = (error as any).response?.data?.message || "Deletion failed";
+            toast.error(message);
         }
     });
 
@@ -195,19 +216,56 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
                         <MoreHorizontal className="h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-[180px]">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem>View Profile</DropdownMenuItem>
-                    <DropdownMenuItem>View Earnings</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetails(true)}>
+                        <Eye className="mr-2 h-4 w-4" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Earnings view coming soon")}>
+                        <BadgeIndianRupee className="mr-2 h-4 w-4" /> View Earnings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Edit functionality coming soon")}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                    </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
+
+                    {isSuspended ? (
+                        <DropdownMenuItem
+                            className="text-green-600 cursor-pointer font-medium"
+                            disabled={isUnsuspending}
+                            onClick={() => unsuspend()}
+                        >
+                            <ShieldCheck className="mr-2 h-4 w-4" /> Activate Account
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem
+                            className="text-orange-600 cursor-pointer font-medium"
+                            onClick={() => setOpenSuspend(true)}
+                        >
+                            <ShieldAlert className="mr-2 h-4 w-4" /> Suspend Account
+                        </DropdownMenuItem>
+                    )}
+
                     <DropdownMenuItem
-                        className="text-destructive cursor-pointer"
-                        onClick={() => setOpenSuspend(true)}
+                        className="text-destructive cursor-pointer font-medium"
+                        disabled={isDeleting}
+                        onClick={() => {
+                            if (confirm(`Are you sure you want to delete ${astrologer.personalDetails.name}?`)) {
+                                deleteAstrologer();
+                            }
+                        }}
                     >
-                        Suspend Account
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Account
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+
+            <AstrologerDetailModal
+                isOpen={showDetails}
+                onClose={() => setShowDetails(false)}
+                astrologer={astrologer}
+            />
 
             <SuspendModal
                 isOpen={openSuspend}

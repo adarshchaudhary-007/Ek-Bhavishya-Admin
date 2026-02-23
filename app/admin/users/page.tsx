@@ -11,7 +11,7 @@ export default function UsersPage() {
     const { data, isLoading } = useQuery({
         queryKey: ['users'],
         queryFn: async () => {
-            const response = await api.get('/users');
+            const response = await api.get('/api/v1/admin/users');
             return response.data.data || [];
         }
     });

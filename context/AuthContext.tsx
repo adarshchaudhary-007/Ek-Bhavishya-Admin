@@ -2,79 +2,164 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-import { User } from '@/types';
+import { AdminUser, LoginCredentials, AuthResponse } from '@/types';
+import api from '@/lib/axios';
 
 interface AuthContextType {
-    user: User | null;
+    user: AdminUser | null;
     loading: boolean;
-    login: (token: string, user: User) => void;
+    login: (credentials: LoginCredentials) => Promise<void>;
     logout: () => void;
     isAuthenticated: boolean;
+    refreshToken: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<AdminUser | null>(null);
     const [loading, setLoading] = useState(true);
-    const [hasToken, setHasToken] = useState(false);
     const router = useRouter();
 
-    useEffect(() => {
-        async function checkAuth() {
-            const token = localStorage.getItem('token');
-            setHasToken(!!token && token !== 'undefined');
-            if (token && token !== 'undefined') {
-                try {
-                    // Debug: Decode token
-                    const base64Url = token.split('.')[1];
-                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                    }).join(''));
-                    console.log('Decoded Token:', JSON.parse(jsonPayload));
-
-                    const storedUser = localStorage.getItem('user');
-                    if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
-                        setUser(JSON.parse(storedUser));
-                    }
-                } catch (error) {
-                    console.error("Auth check failed to parse user data", error);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                }
-            } else if (token === 'undefined') {
-                console.warn('Invalid "undefined" token found in localStorage, clearing');
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-            }
-            setLoading(false);
+    // Check if token is expired
+    const isTokenExpired = (token: string): boolean => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                window.atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            const decoded = JSON.parse(jsonPayload);
+            const currentTime = Date.now() / 1000;
+            return decoded.exp < currentTime;
+        } catch (error) {
+            console.error('Error decoding token:', error);
+            return true;
         }
-        checkAuth();
-    }, []);
-
-    const login = (token: string, userData: any) => {
-        console.log('AuthContext: login called', { hasToken: !!token, hasUserData: !!userData });
-        localStorage.setItem('token', token);
-        if (userData) {
-            localStorage.setItem('user', JSON.stringify(userData));
-        }
-        setUser(userData || null);
-        setHasToken(true);
-        console.log('AuthContext: State updated, redirecting to /admin');
-        router.push('/admin');
     };
 
-    const logout = () => {
+    // Initialize authentication state
+    useEffect(() => {
+        async function initializeAuth() {
+            try {
+                const token = localStorage.getItem('token');
+                const storedUser = localStorage.getItem('user');
+
+                if (token && token !== 'undefined' && token !== 'null') {
+                    // Check if token is expired
+                    if (isTokenExpired(token)) {
+                        console.log('Token expired, clearing auth data');
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        setUser(null);
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Restore user from localStorage
+                    if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
+                        const userData = JSON.parse(storedUser);
+                        setUser(userData);
+                        console.log('Auth restored from localStorage:', userData);
+                    }
+                } else {
+                    console.log('No valid token found');
+                }
+            } catch (error) {
+                console.error('Auth initialization failed:', error);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        initializeAuth();
+    }, []);
+
+    // Login function using admin API
+    const login = async (credentials: LoginCredentials): Promise<void> => {
+        try {
+            setLoading(true);
+            const response = await api.post<AuthResponse>('/api/v1/admin/login', credentials);
+
+            if (response.data.success) {
+                const { token, admin } = response.data;
+                
+                // Store auth data
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(admin));
+                
+                // Update state
+                setUser(admin);
+                
+                console.log('Login successful:', admin);
+                
+                // Redirect to admin dashboard
+                router.push('/admin');
+            } else {
+                throw new Error('Login failed: Invalid response');
+            }
+        } catch (error: any) {
+            console.error('Login error:', error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Logout function
+    const logout = (): void => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
+        console.log('User logged out');
         router.push('/login');
     };
 
+    // Refresh token function (placeholder for future implementation)
+    const refreshToken = async (): Promise<void> => {
+        try {
+            // This would be implemented when refresh token endpoint is available
+            console.log('Token refresh not implemented yet');
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            logout();
+        }
+    };
+
+    // Auto-logout on token expiration
+    useEffect(() => {
+        const checkTokenExpiration = () => {
+            const token = localStorage.getItem('token');
+            if (token && token !== 'undefined' && token !== 'null') {
+                if (isTokenExpired(token)) {
+                    console.log('Token expired, logging out');
+                    logout();
+                }
+            }
+        };
+
+        // Check token expiration every minute
+        const interval = setInterval(checkTokenExpiration, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const value: AuthContextType = {
+        user,
+        loading,
+        login,
+        logout,
+        isAuthenticated: !!user,
+        refreshToken,
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, isAuthenticated: !!user || hasToken }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

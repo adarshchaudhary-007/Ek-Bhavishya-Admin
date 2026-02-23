@@ -12,9 +12,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import * as React from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/axios"
 import { toast } from "sonner"
+import { UserDetailModal } from "./user-detail-modal"
 
 export type User = {
     _id: string
@@ -36,49 +38,101 @@ export type User = {
     }
 }
 
+import { Eye, Edit, Trash2, ShieldCheck, ShieldAlert } from "lucide-react"
+
 const UserActions = ({ user }: { user: User }) => {
     const queryClient = useQueryClient()
+    const [showDetails, setShowDetails] = React.useState(false)
 
-    const { mutate: toggleBlock, isPending } = useMutation({
+    const isBlocked = user.status === 'Blocked' || user.status === 'Inactive'
+
+    const { mutate: toggleBlock, isPending: isToggling } = useMutation({
         mutationFn: async () => {
-            await api.patch(`/users/${user._id}/toggle-status`);
+            await api.patch(`/api/v1/admin/users/${user._id}/toggle-status`);
         },
         onSuccess: () => {
-            toast.success("User status updated successfully");
+            toast.success(`User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
             queryClient.invalidateQueries({ queryKey: ["users"] });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             console.error(error);
-            toast.error(error.response?.data?.message || "Action failed");
+            const message = (error as any).response?.data?.message || "Action failed";
+            toast.error(message);
+        }
+    })
+
+    const { mutate: deleteUser, isPending: isDeleting } = useMutation({
+        mutationFn: async () => {
+            await api.delete(`/api/v1/admin/users/${user._id}`);
+        },
+        onSuccess: () => {
+            toast.success("User deleted successfully");
+            queryClient.invalidateQueries({ queryKey: ["users"] });
+        },
+        onError: (error: Error) => {
+            const message = (error as any).response?.data?.message || "Deletion failed";
+            toast.error(message);
         }
     })
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem
-                    onClick={() => navigator.clipboard.writeText(user._id)}
-                >
-                    Copy User ID
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>View details</DropdownMenuItem>
-                <DropdownMenuItem
-                    className="text-destructive cursor-pointer"
-                    disabled={isPending}
-                    onClick={() => toggleBlock()}
-                >
-                    Block User
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[180px]">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetails(true)}>
+                        <Eye className="mr-2 h-4 w-4" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Edit functionality coming soon")}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit User
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    {isBlocked ? (
+                        <DropdownMenuItem
+                            className="text-green-600 cursor-pointer font-medium"
+                            disabled={isToggling}
+                            onClick={() => toggleBlock()}
+                        >
+                            <ShieldCheck className="mr-2 h-4 w-4" /> Unblock User
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem
+                            className="text-destructive cursor-pointer font-medium"
+                            disabled={isToggling}
+                            onClick={() => toggleBlock()}
+                        >
+                            <ShieldAlert className="mr-2 h-4 w-4" /> Block User
+                        </DropdownMenuItem>
+                    )}
+
+                    <DropdownMenuItem
+                        className="text-destructive cursor-pointer font-medium"
+                        disabled={isDeleting}
+                        onClick={() => {
+                            if (confirm(`Are you sure you want to delete ${user.fullName || user.email}?`)) {
+                                deleteUser();
+                            }
+                        }}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete User
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <UserDetailModal
+                user={user}
+                isOpen={showDetails}
+                onClose={() => setShowDetails(false)}
+            />
+        </>
     )
 }
 
@@ -89,9 +143,13 @@ export const columns: ColumnDef<User>[] = [
         cell: ({ row }: { row: Row<User> }) => {
             const user = row.original
             return (
-                <div>
-                    <p className="font-medium">{user.fullName || 'N/A'}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                <div className="max-w-[200px]">
+                    <p className="font-medium truncate" title={user.fullName || 'N/A'}>
+                        {user.fullName || 'N/A'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate" title={user.email}>
+                        {user.email}
+                    </p>
                 </div>
             )
         }
@@ -100,7 +158,7 @@ export const columns: ColumnDef<User>[] = [
         accessorKey: "phoneNumber",
         header: "Phone",
         cell: ({ row }: { row: Row<User> }) => {
-            return row.getValue("phoneNumber") || "N/A"
+            return <span className="text-sm">{row.getValue("phoneNumber") || "N/A"}</span>
         }
     },
     {
@@ -109,7 +167,7 @@ export const columns: ColumnDef<User>[] = [
         cell: ({ row }: { row: Row<User> }) => {
             const isVerified = row.getValue("is_verified") as boolean
             return (
-                <Badge variant={isVerified ? "success" : "secondary"}>
+                <Badge variant={isVerified ? "success" : "secondary"} className="text-[10px] font-bold uppercase py-0 px-1.5 h-5">
                     {isVerified ? "Verified" : "Unverified"}
                 </Badge>
             )
@@ -120,7 +178,7 @@ export const columns: ColumnDef<User>[] = [
         header: "Wallet",
         cell: ({ row }: { row: Row<User> }) => {
             const balance = row.getValue("walletBalance") as number
-            return <span className="font-medium">₹{balance}</span>
+            return <span className="font-bold text-sm">₹{balance}</span>
         }
     },
     {
@@ -129,7 +187,7 @@ export const columns: ColumnDef<User>[] = [
         cell: ({ row }: { row: Row<User> }) => {
             const status = row.getValue("status") as string
             return (
-                <Badge variant={status === "Active" ? "success" : "secondary"}>
+                <Badge variant={status === "Active" ? "success" : "secondary"} className="text-[10px] font-bold uppercase py-0 px-1.5 h-5">
                     {status}
                 </Badge>
             )
@@ -140,7 +198,7 @@ export const columns: ColumnDef<User>[] = [
         header: "Joined",
         cell: ({ row }: { row: Row<User> }) => {
             const date = row.getValue("createdAt") as string
-            return new Date(date).toLocaleDateString()
+            return <span className="text-xs text-muted-foreground">{new Date(date).toLocaleDateString()}</span>
         }
     },
     {

@@ -16,13 +16,16 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import api from "@/lib/axios"
 
+import { Eye, FileText, CheckCircle, XCircle, MoreVertical, PlayCircle } from "lucide-react"
+import { useQueryClient, useMutation } from "@tanstack/react-query"
+
 export type CallReport = {
-    id: string
+    _id: string
     user: string
     astrologer: string
     duration: string
     amount: number
-    status: "completed" | "active" | "disputed" | "refunded"
+    status: string
     reportReason?: string
     date: string
 }
@@ -31,29 +34,29 @@ export const columns: ColumnDef<CallReport>[] = [
     {
         accessorKey: "date",
         header: "Date",
+        cell: ({ row }: { row: Row<CallReport> }) => <span className="text-xs text-muted-foreground">{new Date(row.getValue("date")).toLocaleDateString()}</span>
     },
     {
         accessorKey: "user",
         header: "User",
+        cell: ({ row }: { row: Row<CallReport> }) => <span className="font-medium">{row.getValue("user")}</span>
     },
     {
         accessorKey: "astrologer",
         header: "Astrologer",
+        cell: ({ row }: { row: Row<CallReport> }) => <span className="font-medium">{row.getValue("astrologer")}</span>
     },
     {
         accessorKey: "duration",
         header: "Duration",
+        cell: ({ row }: { row: Row<CallReport> }) => <Badge variant="outline" className="font-mono text-[10px]">{row.getValue("duration")}</Badge>
     },
     {
         accessorKey: "amount",
         header: "Amount",
         cell: ({ row }: { row: Row<CallReport> }) => {
-            const amount = parseFloat(row.getValue("amount"))
-            const formatted = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-            }).format(amount)
-            return <div className="font-medium">{formatted}</div>
+            const amount = parseFloat(row.getValue("amount")) || 0
+            return <div className="font-bold text-sm">₹{amount}</div>
         }
     },
     {
@@ -72,6 +75,7 @@ export const columns: ColumnDef<CallReport>[] = [
                                     ? "default"
                                     : "secondary"
                     }
+                    className="text-[10px] font-bold uppercase py-0 px-1.5 h-5"
                 >
                     {status}
                 </Badge>
@@ -85,8 +89,8 @@ export const columns: ColumnDef<CallReport>[] = [
             const reason = row.getValue("reportReason") as string
             if (!reason) return null
             return (
-                <div className="flex items-center text-destructive text-sm font-medium">
-                    <AlertCircle className="w-4 h-4 mr-1" />
+                <div className="flex items-center text-destructive text-[10px] font-bold uppercase bg-destructive/10 px-2 py-0.5 rounded-full">
+                    <AlertCircle className="w-3 h-3 mr-1" />
                     {reason}
                 </div>
             )
@@ -95,25 +99,28 @@ export const columns: ColumnDef<CallReport>[] = [
     {
         id: "actions",
         cell: ({ row }: { row: Row<CallReport> }) => {
-            return <ActionCell report={row.original as CallReport} />
+            return <ActionCell report={row.original} />
         },
     },
 ]
 
 const ActionCell = ({ report }: { report: CallReport }) => {
-    const handleAction = async (action: string, endpoint: string) => {
-        toast.loading(`Processing ${action}...`, { id: 'action-toast' });
-        try {
+    const queryClient = useQueryClient();
+
+    const { mutate: handleAction, isPending } = useMutation({
+        mutationFn: async ({ action, endpoint }: { action: string, endpoint: string }) => {
             await api.post(endpoint);
-            toast.success(`${action} successful`, { id: 'action-toast' });
-            // Optionally invalidate queries here if I had access to queryClient
-            // but for now, simple success message.
-            // Ideally trigger a refetch or update local state.
-            window.location.reload(); // Simple brute force refresh for now or use queryClient
-        } catch (error) {
-            toast.error(`Failed to ${action}`, { id: 'action-toast' });
+        },
+        onSuccess: (_, variables) => {
+            toast.success(`${variables.action} successful`);
+            queryClient.invalidateQueries({ queryKey: ['calls'] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+        },
+        onError: (error, variables) => {
+            const message = (error as any).response?.data?.message || `Failed to ${variables.action}`;
+            toast.error(message);
         }
-    }
+    });
 
     return (
         <DropdownMenu>
@@ -123,18 +130,30 @@ const ActionCell = ({ report }: { report: CallReport }) => {
                     <MoreHorizontal className="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-[180px]">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>View Call Details</DropdownMenuItem>
-                <DropdownMenuItem>View Recording</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Call details coming soon")}>
+                    <FileText className="mr-2 h-4 w-4" /> View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Recording playback coming soon")}>
+                    <PlayCircle className="mr-2 h-4 w-4" /> View Recording
+                </DropdownMenuItem>
                 {report.status === 'disputed' && (
                     <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-green-600" onClick={() => handleAction('Refund', `/calls/${report.id}/refund`)}>
-                            Approve Refund
+                        <DropdownMenuItem
+                            className="text-green-600 cursor-pointer font-medium"
+                            disabled={isPending}
+                            onClick={() => handleAction({ action: 'Refund', endpoint: `/calls/${report._id}/refund` })}
+                        >
+                            <CheckCircle className="mr-2 h-4 w-4" /> Approve Refund
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAction('Dismiss', `/calls/${report.id}/dismiss`)}>
-                            Dismiss Report
+                        <DropdownMenuItem
+                            className="text-orange-600 cursor-pointer font-medium"
+                            disabled={isPending}
+                            onClick={() => handleAction({ action: 'Dismiss', endpoint: `/calls/${report._id}/dismiss` })}
+                        >
+                            <XCircle className="mr-2 h-4 w-4" /> Dismiss Report
                         </DropdownMenuItem>
                     </>
                 )}
