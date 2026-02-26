@@ -15,6 +15,41 @@ export interface AdminUser {
     avatar?: string;
 }
 
+// Platform User Types (customers)
+export interface PlatformUser {
+    _id: string;
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    profilePhoto?: string;
+    freeMinutes?: {
+        total: number;
+        used: number;
+        remaining: number;
+    };
+    kundli?: any;
+    exanthem?: any;
+    isVerified: boolean;
+    accountStatus: 'Active' | 'Blocked' | 'Suspended';
+    walletBalance: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface PlatformUsersResponse {
+    success: boolean;
+    data: PlatformUser[];
+    pagination?: PaginationInfo;
+}
+
+export interface BlockUserRequest {
+    userId: string;
+}
+
+export interface UnblockUserRequest {
+    userId: string;
+}
+
 export interface LoginCredentials {
     email: string;
     password: string;
@@ -58,12 +93,28 @@ export interface Seller {
     fullname: string;
     email: string;
     phone_number: string;
-    address: string;
-    gst_number: string;
-    status: 'Active' | 'Inactive' | 'Blocked';
+    profile_image?: string;
+    address?: string;
+    gst_number?: string;
+    adhar_number?: string;
+    bank_account_no?: string;
+    ifsc_code?: string;
+    bank_holder_name?: string;
+    adhar_document?: string;
+    gst_document?: string;
+    status: 'Active' | 'Inactive' | 'Blocked' | 'Pending';
     is_approved: boolean;
     is_verified: boolean;
     display_status?: string;
+    documents?: {
+        gstCertificate?: string;
+        businessLicense?: string;
+    };
+    bankDetails?: {
+        accountNumber: string;
+        ifscCode: string;
+        accountHolderName: string;
+    };
     createdAt: string;
     updatedAt?: string;
 }
@@ -196,6 +247,10 @@ export interface RejectBlogRequest {
     reason: string;
 }
 
+export interface RevertBlogStatusRequest {
+    blogId: string;
+}
+
 // Course Types
 export interface CourseModule {
     _id?: string;
@@ -292,6 +347,10 @@ export interface ConsultationStats {
     todayConsultations: number;
     averageRating: number;
     completionRate: number;
+    completedConsultations?: number;
+    cancelledConsultations?: number;
+    totalRevenue?: number;
+    averageDuration?: number;
 }
 
 export interface ConsultationStatsResponse {
@@ -305,8 +364,8 @@ export interface RevenueDataPoint {
 }
 
 export interface DateRange {
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
 }
 
 export interface RevenueStatsResponse {
@@ -326,6 +385,15 @@ export interface TopAstrologer {
     totalEarnings: number;
     totalConsultations: number;
     rating: number;
+    totalRevenue?: number;
+    averageRating?: number;
+    rank?: number;
+}
+
+export interface TopAstrologersParams {
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
 }
 
 export interface TopAstrologersResponse {
@@ -333,15 +401,19 @@ export interface TopAstrologersResponse {
     data: TopAstrologer[];
 }
 
-export interface UsageParams extends DateRange {
-    format?: 'daily' | 'weekly' | 'monthly';
+export interface UsageParams {
+    startDate?: string;
+    endDate?: string;
+    format?: 'json' | 'csv' | 'table' | 'daily' | 'weekly' | 'monthly';
 }
 
 export interface UsageDataPoint {
     date: string;
     activeUsers: number;
     newUsers: number;
-    sessions: number;
+    sessions?: number;
+    consultations?: number;
+    revenue?: number;
 }
 
 export interface UsageResponse {
@@ -369,15 +441,31 @@ export interface Astrologer {
         email: string;
         phone: string;
     };
-    status: 'Active' | 'Inactive' | 'Suspended';
+    status: 'Active' | 'Inactive' | 'Suspended' | 'Blocked';
     isVerified: boolean;
     rating: number;
     totalEarnings: number;
     createdAt: string;
+    suspensionInfo?: {
+        reason: string;
+        suspendedAt: string;
+        suspendUntil: string;
+        remainingDays: number;
+    };
 }
 
 export interface AstrologersResponse {
     success: boolean;
     data: Astrologer[];
     pagination?: PaginationInfo;
+}
+
+export interface SuspendAstrologerRequest {
+    id: string;
+    suspensionReason: string;
+    suspendDays: number;
+}
+
+export interface UnsuspendAstrologerRequest {
+    id: string;
 }

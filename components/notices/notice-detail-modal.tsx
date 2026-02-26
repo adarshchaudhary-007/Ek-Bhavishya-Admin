@@ -177,7 +177,7 @@ export function NoticeDetailModal({ isOpen, onClose, noticeId }: NoticeDetailMod
                                         <TableBody>
                                             {targetedUsers.map((user: any) => (
                                                 <TableRow key={user._id}>
-                                                    <TableCell className="font-medium">
+                                                    <TableCell className="font-medium truncate max-w-[150px]" title={user.fullName || "N/A"}>
                                                         {user.fullName || "N/A"}
                                                     </TableCell>
                                                     <TableCell className="text-sm text-gray-500">

@@ -11,6 +11,8 @@ import {
     AstrologersResponse,
     OperationResponse,
     PaginationParams,
+    SuspendAstrologerRequest,
+    UnsuspendAstrologerRequest,
 } from '@/types';
 
 /**
@@ -31,9 +33,9 @@ export function useSuspendAstrologer() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, reason }: { id: string; reason?: string }) => {
-            console.log('[useSuspendAstrologer] Suspending astrologer:', id);
-            return AstrologerService.suspendAstrologer(id, reason);
+        mutationFn: (data: SuspendAstrologerRequest) => {
+            console.log('[useSuspendAstrologer] Suspending astrologer:', data);
+            return AstrologerService.suspendAstrologer(data);
         },
         onSuccess: (data, variables) => {
             console.log('[useSuspendAstrologer] Success response:', data);
@@ -73,11 +75,11 @@ export function useUnsuspendAstrologer() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string) => {
-            console.log('[useUnsuspendAstrologer] Unsuspending astrologer:', id);
-            return AstrologerService.unsuspendAstrologer(id);
+        mutationFn: (data: UnsuspendAstrologerRequest) => {
+            console.log('[useUnsuspendAstrologer] Unsuspending astrologer:', data);
+            return AstrologerService.unsuspendAstrologer(data);
         },
-        onSuccess: (data, astrologerId) => {
+        onSuccess: (data, variables) => {
             console.log('[useUnsuspendAstrologer] Success response:', data);
             toast.success(data.message || 'Astrologer unsuspended successfully');
 
@@ -89,7 +91,7 @@ export function useUnsuspendAstrologer() {
                     return {
                         ...oldData,
                         data: oldData.data.map((astrologer: any) =>
-                            astrologer._id === astrologerId
+                            astrologer._id === variables.id
                                 ? { ...astrologer, status: 'Active' }
                                 : astrologer
                         ),

@@ -8,7 +8,7 @@ interface OverviewProps {
     color?: string;
 }
 
-const COLORS = ['#0891b2', '#f43f5e', '#8b5cf6', '#10b981', '#f59e0b'];
+const COLORS = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
 
 export function Overview({ data, type = 'bar', color = 'hsl(var(--primary))' }: OverviewProps) {
     if (!data || data.length === 0) {
@@ -20,6 +20,7 @@ export function Overview({ data, type = 'bar', color = 'hsl(var(--primary))' }: 
     }
 
     if (type === 'pie') {
+        const total = data.reduce((acc, curr) => acc + curr.total, 0);
         return (
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -27,20 +28,27 @@ export function Overview({ data, type = 'bar', color = 'hsl(var(--primary))' }: 
                         data={data}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
+                        innerRadius={70}
+                        outerRadius={100}
+                        paddingAngle={4}
                         dataKey="total"
+                        animationBegin={0}
+                        animationDuration={1500}
                     >
                         {data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
                         ))}
                     </Pie>
                     <Tooltip
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                     />
-                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-emerald-950 font-black text-xl">
-                        {data.reduce((acc, curr) => acc + curr.total, 0).toLocaleString()}
+                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                        <tspan x="50%" dy="-0.5em" className="fill-emerald-950 font-black text-2xl">
+                            {Math.floor(total).toLocaleString()}
+                        </tspan>
+                        <tspan x="50%" dy="1.5em" className="fill-emerald-600 font-bold text-xs uppercase tracking-widest">
+                            Total
+                        </tspan>
                     </text>
                 </PieChart>
             </ResponsiveContainer>

@@ -14,12 +14,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
-import { SuspendModal } from "./suspend-modal"
+import { SuspendAstrologerModal as SuspendModal } from "./suspend-modal"
 import { toast } from "sonner"
 import api from "@/lib/axios"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AstrologerDetailModal } from "./astrologer-detail-modal"
-import { Eye, Edit, Trash2, ShieldCheck, ShieldAlert, BadgeIndianRupee } from "lucide-react"
+import { Eye, Edit, Trash2, ShieldCheck, ShieldAlert, BadgeIndianRupee, Clock } from "lucide-react"
+import { useUnsuspendAstrologer } from "@/lib/hooks/use-astrologers"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export type Astrologer = {
     _id: string
@@ -32,6 +34,8 @@ export type Astrologer = {
         skills: string[]
         pseudonym?: string
         profileImage?: string
+        about?: string
+        gender?: string
     }
     ratings: {
         average: number
@@ -49,16 +53,38 @@ export type Astrologer = {
         isCallAvailable: boolean
         isChatAvailable: boolean
         isVideoAvailable: boolean
+        lastOnlineAt?: string
+        currentCallId?: string | null
+    }
+    callSettings?: {
+        audioCallRate: number
+        videoCallRate: number
+        acceptAudioCalls: boolean
+        acceptVideoCalls: boolean
     }
     verificationStatus: string
     onboardingStatus: string
     isApproved: boolean
     walletBalance: number
-    callSettings: {
-        audioCallRate: number
-        videoCallRate: number
+    isExclusive?: boolean
+    membershipOptions?: any[]
+    referral?: {
+        code: string
+        referredBy?: string | null
+        totalRewards: number
+    }
+    rejectionDetails?: {
+        date: string
+        reason: string
+    }
+    suspensionInfo?: {
+        reason: string
+        suspendedAt: string
+        suspendUntil: string
+        remainingDays: number
     }
     createdAt: string
+    updatedAt: string
 }
 
 export const columns: ColumnDef<Astrologer>[] = [
@@ -152,7 +178,35 @@ export const columns: ColumnDef<Astrologer>[] = [
         accessorKey: "availability.status",
         header: "Status",
         cell: ({ row }: { row: Row<Astrologer> }) => {
-            const status = row.original.availability.status
+            const astrologer = row.original
+            const status = astrologer.availability.status
+            const isSuspended = status === "suspended" || !astrologer.isApproved
+            const suspensionInfo = astrologer.suspensionInfo
+
+            if (isSuspended && suspensionInfo) {
+                return (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1">
+                                    <Badge variant="destructive" className="text-xs">
+                                        Suspended
+                                    </Badge>
+                                    <Clock className="h-3 w-3 text-orange-500" />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                                <div className="space-y-1">
+                                    <p className="font-semibold">Suspension Details</p>
+                                    <p className="text-sm"><span className="font-medium">Reason:</span> {suspensionInfo.reason}</p>
+                                    <p className="text-sm"><span className="font-medium">Remaining:</span> {suspensionInfo.remainingDays} days</p>
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )
+            }
+
             return (
                 <Badge
                     variant={status === "online" ? "success" : "secondary"}
@@ -179,19 +233,7 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
 
     const isSuspended = astrologer.availability.status === 'suspended' || !astrologer.isApproved;
 
-    const { mutate: unsuspend, isPending: isUnsuspending } = useMutation({
-        mutationFn: async () => {
-            await api.post(`/astrologers/${astrologer._id}/unsuspend`);
-        },
-        onSuccess: () => {
-            toast.success("Astrologer activated successfully");
-            queryClient.invalidateQueries({ queryKey: ['astrologers'] });
-        },
-        onError: (error: Error) => {
-            const message = (error as any).response?.data?.message || "Failed to activate";
-            toast.error(message);
-        }
-    });
+    const { mutate: unsuspend, isPending: isUnsuspending } = useUnsuspendAstrologer();
 
     const { mutate: deleteAstrologer, isPending: isDeleting } = useMutation({
         mutationFn: async () => {
@@ -206,6 +248,10 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
             toast.error(message);
         }
     });
+
+    const handleUnsuspend = () => {
+        unsuspend({ id: astrologer._id });
+    };
 
     return (
         <>
@@ -234,16 +280,17 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
                         <DropdownMenuItem
                             className="text-green-600 cursor-pointer font-medium"
                             disabled={isUnsuspending}
-                            onClick={() => unsuspend()}
+                            onClick={handleUnsuspend}
                         >
-                            <ShieldCheck className="mr-2 h-4 w-4" /> Activate Account
+                            <ShieldCheck className="mr-2 h-4 w-4" /> 
+                            {isUnsuspending ? "Unsuspending..." : "Unsuspend"}
                         </DropdownMenuItem>
                     ) : (
                         <DropdownMenuItem
                             className="text-orange-600 cursor-pointer font-medium"
                             onClick={() => setOpenSuspend(true)}
                         >
-                            <ShieldAlert className="mr-2 h-4 w-4" /> Suspend Account
+                            <ShieldAlert className="mr-2 h-4 w-4" /> Suspend
                         </DropdownMenuItem>
                     )}
 

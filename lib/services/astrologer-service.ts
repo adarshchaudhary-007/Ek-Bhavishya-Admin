@@ -8,6 +8,8 @@ import {
     AstrologersResponse,
     OperationResponse,
     PaginationParams,
+    SuspendAstrologerRequest,
+    UnsuspendAstrologerRequest,
 } from '@/types';
 
 export class AstrologerService {
@@ -24,12 +26,9 @@ export class AstrologerService {
     /**
      * Suspend an astrologer
      */
-    static async suspendAstrologer(id: string, reason?: string): Promise<OperationResponse> {
-        console.log('[AstrologerService] suspendAstrologer called with id:', id);
-        const response = await api.patch<OperationResponse>('/api/v1/admin/astrologers/suspend', {
-            id,
-            reason
-        });
+    static async suspendAstrologer(data: SuspendAstrologerRequest): Promise<OperationResponse> {
+        console.log('[AstrologerService] suspendAstrologer called with data:', data);
+        const response = await api.post<OperationResponse>('/api/v1/admin/astrologers/suspend', data);
         console.log('[AstrologerService] suspendAstrologer response:', response.data);
         return response.data;
     }
@@ -37,11 +36,9 @@ export class AstrologerService {
     /**
      * Unsuspend an astrologer
      */
-    static async unsuspendAstrologer(id: string): Promise<OperationResponse> {
-        console.log('[AstrologerService] unsuspendAstrologer called with id:', id);
-        const response = await api.patch<OperationResponse>('/api/v1/admin/astrologers/unsuspend', {
-            id
-        });
+    static async unsuspendAstrologer(data: UnsuspendAstrologerRequest): Promise<OperationResponse> {
+        console.log('[AstrologerService] unsuspendAstrologer called with data:', data);
+        const response = await api.post<OperationResponse>('/api/v1/admin/astrologers/unsuspend', data);
         console.log('[AstrologerService] unsuspendAstrologer response:', response.data);
         return response.data;
     }

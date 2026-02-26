@@ -38,28 +38,21 @@ export type User = {
     }
 }
 
-import { Eye, Edit, Trash2, ShieldCheck, ShieldAlert } from "lucide-react"
+import { Eye, Edit, Trash2, ShieldAlert } from "lucide-react"
+import { useBlockUser } from "@/lib/hooks/use-users"
+import { BlockUserModal } from "./block-user-modal"
 
 const UserActions = ({ user }: { user: User }) => {
     const queryClient = useQueryClient()
     const [showDetails, setShowDetails] = React.useState(false)
+    const [showBlockConfirm, setShowBlockConfirm] = React.useState(false)
 
-    const isBlocked = user.status === 'Blocked' || user.status === 'Inactive'
+    const blockUserMutation = useBlockUser()
 
-    const { mutate: toggleBlock, isPending: isToggling } = useMutation({
-        mutationFn: async () => {
-            await api.patch(`/api/v1/admin/users/${user._id}/toggle-status`);
-        },
-        onSuccess: () => {
-            toast.success(`User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
-            queryClient.invalidateQueries({ queryKey: ["users"] });
-        },
-        onError: (error: Error) => {
-            console.error(error);
-            const message = (error as any).response?.data?.message || "Action failed";
-            toast.error(message);
-        }
-    })
+    const handleBlockUser = () => {
+        blockUserMutation.mutate(user._id)
+        setShowBlockConfirm(false)
+    }
 
     const { mutate: deleteUser, isPending: isDeleting } = useMutation({
         mutationFn: async () => {
@@ -95,23 +88,13 @@ const UserActions = ({ user }: { user: User }) => {
 
                     <DropdownMenuSeparator />
 
-                    {isBlocked ? (
-                        <DropdownMenuItem
-                            className="text-green-600 cursor-pointer font-medium"
-                            disabled={isToggling}
-                            onClick={() => toggleBlock()}
-                        >
-                            <ShieldCheck className="mr-2 h-4 w-4" /> Unblock User
-                        </DropdownMenuItem>
-                    ) : (
-                        <DropdownMenuItem
-                            className="text-destructive cursor-pointer font-medium"
-                            disabled={isToggling}
-                            onClick={() => toggleBlock()}
-                        >
-                            <ShieldAlert className="mr-2 h-4 w-4" /> Block User
-                        </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem
+                        className="text-destructive cursor-pointer font-medium"
+                        disabled={blockUserMutation.isPending}
+                        onClick={() => setShowBlockConfirm(true)}
+                    >
+                        <ShieldAlert className="mr-2 h-4 w-4" /> Block User
+                    </DropdownMenuItem>
 
                     <DropdownMenuItem
                         className="text-destructive cursor-pointer font-medium"
@@ -131,6 +114,14 @@ const UserActions = ({ user }: { user: User }) => {
                 user={user}
                 isOpen={showDetails}
                 onClose={() => setShowDetails(false)}
+            />
+
+            <BlockUserModal
+                isOpen={showBlockConfirm}
+                onClose={() => setShowBlockConfirm(false)}
+                onConfirm={handleBlockUser}
+                userName={user.fullName || user.email}
+                loading={blockUserMutation.isPending}
             />
         </>
     )

@@ -64,4 +64,30 @@ export const BlogService = {
         console.log('[BlogService] rejectBlog response:', response.data);
         return response.data;
     },
+
+    /**
+     * Revert blog status
+     * For approved blogs: rejects them (sets to Pending/Rejected)
+     * For rejected blogs: approves them (sets to Approved)
+     */
+    async revertBlogStatus(id: string, currentStatus: 'Approved' | 'Rejected', reason: string): Promise<OperationResponse> {
+        console.log('[BlogService] Reverting blog status:', id, 'Current status:', currentStatus, 'Reason:', reason);
+        
+        if (currentStatus === 'Approved') {
+            // For approved blogs, reject them with the provided reason
+            const response = await api.patch('/api/v1/admin/blogs/reject', {
+                id,
+                rejectionReason: reason,
+            });
+            console.log('[BlogService] revertBlogStatus (reject) response:', response.data);
+            return response.data;
+        } else if (currentStatus === 'Rejected') {
+            // For rejected blogs, approve them
+            const response = await api.patch('/api/v1/admin/blogs/approve', { id });
+            console.log('[BlogService] revertBlogStatus (approve) response:', response.data);
+            return response.data;
+        }
+        
+        throw new Error('Invalid status for reversion');
+    },
 };

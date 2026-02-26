@@ -1,9 +1,9 @@
 'use client';
 
-import { Menu, Search } from 'lucide-react';
+import { Menu, User, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ModeToggle } from '@/components/theme-toggle';
+import { GlobalSearch } from '@/components/layout/GlobalSearch';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,6 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
     onMobileMenuOpen?: () => void;
@@ -25,6 +26,7 @@ interface HeaderProps {
 export function Header({ }: HeaderProps) {
     const { user, logout } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const router = useRouter();
 
     return (
         <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -47,23 +49,18 @@ export function Header({ }: HeaderProps) {
             </div>
 
             <div className="flex items-center gap-4">
-                <div className="relative hidden sm:block">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Search..."
-                        className="w-[200px] pl-8 lg:w-[300px]"
-                    />
-                </div>
+                <GlobalSearch />
 
                 <ModeToggle />
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Button variant="ghost" className="relative h-8 w-8 rounded-full ring-2 ring-transparent hover:ring-primary/20 transition-all">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
-                                <AvatarFallback>{user?.name ? user.name.charAt(0).toUpperCase() : 'A'}</AvatarFallback>
+                                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                    {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                                </AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
@@ -77,10 +74,32 @@ export function Header({ }: HeaderProps) {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Settings</DropdownMenuItem>
+                        <DropdownMenuItem 
+                            className="cursor-pointer"
+                            onSelect={(e) => {
+                                e.preventDefault()
+                                router.push('/admin/profile')
+                            }}
+                        >
+                            <User className="mr-2 h-4 w-4" />
+                            Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                            className="cursor-pointer"
+                            onSelect={(e) => {
+                                e.preventDefault()
+                                router.push('/admin/profile')
+                            }}
+                        >
+                            <Settings className="mr-2 h-4 w-4" />
+                            Settings
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={logout}>
+                        <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive cursor-pointer" 
+                            onClick={logout}
+                        >
+                            <LogOut className="mr-2 h-4 w-4" />
                             Log out
                         </DropdownMenuItem>
                     </DropdownMenuContent>

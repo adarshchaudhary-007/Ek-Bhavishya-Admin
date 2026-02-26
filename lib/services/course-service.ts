@@ -59,8 +59,14 @@ export class CourseService {
      */
     static async createAdminCourse(data: CreateCourseRequest): Promise<CourseResponse> {
         console.log('[CourseService] createAdminCourse called with data:', data);
-        const response = await api.post<CourseResponse>('/api/v1/admin/courses/admin-courses', data);
+        const response = await api.post<any>('/api/v1/admin/courses/admin-courses', data);
         console.log('[CourseService] createAdminCourse response:', response.data);
+
+        // Normalize response to match expected CourseResponse interface
+        if (response.data.course && !response.data.data) {
+            response.data.data = response.data.course;
+        }
+
         return response.data;
     }
 
@@ -79,8 +85,14 @@ export class CourseService {
      */
     static async updateAdminCourse(data: UpdateCourseRequest): Promise<CourseResponse> {
         console.log('[CourseService] updateAdminCourse called with data:', data);
-        const response = await api.put<CourseResponse>('/api/v1/admin/courses/admin-courses/update', data);
+        const response = await api.put<any>('/api/v1/admin/courses/admin-courses/update', data);
         console.log('[CourseService] updateAdminCourse response:', response.data);
+
+        // Normalize response to match expected CourseResponse interface
+        if (response.data.course && !response.data.data) {
+            response.data.data = response.data.course;
+        }
+
         return response.data;
     }
 
@@ -89,8 +101,14 @@ export class CourseService {
      */
     static async getAdminCourseById(id: string): Promise<CourseResponse> {
         console.log('[CourseService] getAdminCourseById called with id:', id);
-        const response = await api.get<CourseResponse>(`/api/v1/admin/courses/admin-courses/${id}`);
+        const response = await api.post<any>('/api/v1/admin/courses/get-by-id', { id });
         console.log('[CourseService] getAdminCourseById response:', response.data);
+
+        // Normalize response to match expected CourseResponse interface
+        if (response.data.course && !response.data.data) {
+            response.data.data = response.data.course;
+        }
+
         return response.data;
     }
 

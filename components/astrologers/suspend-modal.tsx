@@ -1,94 +1,141 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import api from '@/lib/axios';
+    DialogFooter,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useSuspendAstrologer } from "@/lib/hooks/use-astrologers"
 
-interface SuspendModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    astrologerId: string;
-    astrologerName: string;
+const suspendSchema = z.object({
+    suspensionReason: z.string().min(1, "Suspension reason is required"),
+    suspendDays: z.number().min(1, "Suspension days must be at least 1"),
+})
+
+type SuspendFormValues = z.infer<typeof suspendSchema>
+
+interface SuspendAstrologerModalProps {
+    isOpen: boolean
+    onClose: () => void
+    astrologerId: string
+    astrologerName: string
 }
 
-export function SuspendModal({
+export function SuspendAstrologerModal({
     isOpen,
     onClose,
     astrologerId,
     astrologerName,
-}: SuspendModalProps) {
-    const [reason, setReason] = useState('');
-    const [loading, setLoading] = useState(false);
-    const queryClient = useQueryClient();
+}: SuspendAstrologerModalProps) {
+    const { mutate: suspendAstrologer, isPending } = useSuspendAstrologer()
 
-    const handleSuspend = async () => {
-        if (!reason.trim()) {
-            toast.error('Please provide a reason for suspension');
-            return;
-        }
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        reset,
+    } = useForm<SuspendFormValues>({
+        resolver: zodResolver(suspendSchema),
+        defaultValues: {
+            suspensionReason: "",
+            suspendDays: 1,
+        },
+    })
 
-        setLoading(true);
-        try {
-            await api.patch('/astrologers/suspend', {
+    const onSubmit = (data: SuspendFormValues) => {
+        suspendAstrologer(
+            {
                 id: astrologerId,
-                suspensionReason: reason
-            });
+                suspensionReason: data.suspensionReason,
+                suspendDays: data.suspendDays,
+            },
+            {
+                onSuccess: () => {
+                    reset()
+                    onClose()
+                },
+            }
+        )
+    }
 
-            toast.success(`${astrologerName} has been suspended.`);
-            queryClient.invalidateQueries({ queryKey: ['astrologers'] });
-            onClose();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to suspend astrologer');
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const handleClose = () => {
+        reset()
+        onClose()
+    }
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[425px]">
+        <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Suspend Astrologer</DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to suspend {astrologerName}? This action can be
-                        reversed later.
+                        Suspend {astrologerName} from providing services
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="reason" className="text-left">
-                            Reason for Suspension
-                        </Label>
+
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="suspensionReason">Suspension Reason</Label>
                         <Textarea
-                            id="reason"
-                            placeholder="Violation of terms..."
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
+                            id="suspensionReason"
+                            placeholder="Explain why this astrologer is being suspended..."
+                            {...register("suspensionReason")}
+                            disabled={isPending}
+                            rows={4}
                         />
+                        {errors.suspensionReason && (
+                            <p className="text-sm text-red-500">
+                                {errors.suspensionReason.message}
+                            </p>
+                        )}
                     </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={onClose} disabled={loading}>
-                        Cancel
-                    </Button>
-                    <Button variant="destructive" onClick={handleSuspend} loading={loading}>
-                        Suspend
-                    </Button>
-                </DialogFooter>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="suspendDays">Suspension Days</Label>
+                        <Input
+                            id="suspendDays"
+                            type="number"
+                            min="1"
+                            placeholder="Number of days"
+                            {...register("suspendDays", { valueAsNumber: true })}
+                            disabled={isPending}
+                        />
+                        {errors.suspendDays && (
+                            <p className="text-sm text-red-500">
+                                {errors.suspendDays.message}
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleClose}
+                            disabled={isPending}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="destructive"
+                            disabled={isPending}
+                        >
+                            {isPending ? "Suspending..." : "Suspend Astrologer"}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
-    );
+    )
 }

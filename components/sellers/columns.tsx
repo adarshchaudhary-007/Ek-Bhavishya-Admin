@@ -182,7 +182,7 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
             <SellerDetailModal
                 isOpen={showDetails}
                 onClose={() => setShowDetails(false)}
-                sellerId={seller._id}
+                seller={seller}
             />
 
             <RejectModal

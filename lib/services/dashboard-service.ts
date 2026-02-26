@@ -9,6 +9,7 @@ import {
     ConsultationStatsResponse,
     RevenueStatsResponse,
     TopAstrologersResponse,
+    TopAstrologersParams,
     UsageResponse,
     UserActivityResponse,
     DateRange,
@@ -29,9 +30,11 @@ export class DashboardService {
     /**
      * Get consultation statistics
      */
-    static async getConsultationStats(): Promise<ConsultationStatsResponse> {
-        console.log('[DashboardService] getConsultationStats called');
-        const response = await api.get<ConsultationStatsResponse>('/api/v1/admin/dashboard/consultation-stats');
+    static async getConsultationStats(dateRange?: DateRange): Promise<ConsultationStatsResponse> {
+        console.log('[DashboardService] getConsultationStats called with dateRange:', dateRange);
+        const response = await api.get<ConsultationStatsResponse>('/api/v1/admin/dashboard/consultation-stats', {
+            params: dateRange
+        });
         console.log('[DashboardService] getConsultationStats response:', response.data);
         return response.data;
     }
@@ -50,10 +53,13 @@ export class DashboardService {
 
     /**
      * Get top performing astrologers
+     * @param params - Optional parameters including limit, startDate, endDate
      */
-    static async getTopAstrologers(): Promise<TopAstrologersResponse> {
-        console.log('[DashboardService] getTopAstrologers called');
-        const response = await api.get<TopAstrologersResponse>('/api/v1/admin/dashboard/top-astrologers');
+    static async getTopAstrologers(params?: TopAstrologersParams): Promise<TopAstrologersResponse> {
+        console.log('[DashboardService] getTopAstrologers called with params:', params);
+        const response = await api.get<TopAstrologersResponse>('/api/v1/admin/astrologers/top', {
+            params
+        });
         console.log('[DashboardService] getTopAstrologers response:', response.data);
         return response.data;
     }

@@ -63,15 +63,18 @@ export const queryKeys = {
         list: (params?: PaginationParams) => [...queryKeys.astrologers.lists(), params] as const,
         details: () => [...queryKeys.astrologers.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.astrologers.details(), id] as const,
+        top: (params?: { limit?: number; startDate?: string; endDate?: string }) => 
+            [...queryKeys.astrologers.all, 'top', params] as const,
     },
 
     // Dashboard
     dashboard: {
         all: ['dashboard'] as const,
         stats: () => [...queryKeys.dashboard.all, 'stats'] as const,
-        consultationStats: () => [...queryKeys.dashboard.all, 'consultation-stats'] as const,
+        consultationStats: (dateRange?: DateRange) => [...queryKeys.dashboard.all, 'consultation-stats', dateRange] as const,
         revenueStats: (dateRange?: DateRange) => [...queryKeys.dashboard.all, 'revenue-stats', dateRange] as const,
-        topAstrologers: () => [...queryKeys.dashboard.all, 'top-astrologers'] as const,
+        topAstrologers: (params?: { limit?: number; startDate?: string; endDate?: string }) => 
+            [...queryKeys.dashboard.all, 'top-astrologers', params] as const,
         dailyUsage: (params?: UsageParams) => [...queryKeys.dashboard.all, 'daily-usage', params] as const,
         userActivity: () => [...queryKeys.dashboard.all, 'user-activity'] as const,
     },
@@ -126,6 +129,11 @@ export const invalidationHelpers = {
     // Invalidate all dashboard-related queries
     invalidateDashboard: (queryClient: any) => {
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+    },
+
+    // Invalidate all user-related queries
+    invalidateUsers: (queryClient: any) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
 
     // Invalidate specific seller detail

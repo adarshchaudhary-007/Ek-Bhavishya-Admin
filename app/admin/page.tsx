@@ -5,7 +5,7 @@ import { Users, Star, Store, TrendingUp, DollarSign, Phone, BookOpen } from 'luc
 import { Button } from '@/components/ui/button';
 import { Overview } from '@/components/dashboard/Overview';
 import { RecentSales } from '@/components/dashboard/RecentSales';
-import { useDashboardStats, useRevenueStats, useTopAstrologers } from '@/lib/hooks/use-dashboard';
+import { useDashboardStats, useRevenueStats, useTopAstrologers, useConsultationStats } from '@/lib/hooks/use-dashboard';
 import { useState } from 'react';
 import { subDays, format } from 'date-fns';
 import { CalendarIcon, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
@@ -36,7 +36,15 @@ export default function AdminDashboard() {
         isLoading: topLoading
     } = useTopAstrologers();
 
-    if (statsLoading || revenueLoading || topLoading) {
+    const {
+        data: consultationResponse,
+        isLoading: consultationLoading
+    } = useConsultationStats({
+        startDate: format(dateRange.from, 'yyyy-MM-dd'),
+        endDate: format(dateRange.to, 'yyyy-MM-dd')
+    });
+
+    if (statsLoading || revenueLoading || topLoading || consultationLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="animate-spin h-12 w-12 text-primary" />
@@ -56,23 +64,97 @@ export default function AdminDashboard() {
     }
 
     const dashboardData: any = stats?.data || {};
-    const revenueStats = revenueResponse?.data || { totalRevenue: 0, growth: 0, chartData: [] };
+    const revenueStats = revenueResponse?.data || { totalRevenue: 0, periodRevenue: 0, growth: 0, chartData: [] };
+    const consultationStats = consultationResponse?.data || { totalConsultations: 0, todayConsultations: 0, averageRating: 0, completionRate: 0 };
 
     const revenueChartData = revenueStats.chartData?.map((item: any) => ({
         name: format(new Date(item.date), 'MMM dd'),
         total: item.revenue || 0
     })) || [];
 
+    // Use revenue graph from API if available
+    const revenueGraphData = revenueResponse?.data?.revenueGraph?.map((item: any) => ({
+        name: format(new Date(item.date), 'MMM dd'),
+        total: item.amount || 0
+    })) || revenueChartData;
+
     const topAstrologers = topAstrologersResponse?.data || [];
+
+    const handleDownloadPDF = async () => {
+        try {
+            // Dynamic import to reduce bundle size
+            const jsPDF = (await import('jspdf')).default;
+            const doc = new jsPDF();
+
+            // Title
+            doc.setFontSize(20);
+            doc.setTextColor(5, 150, 105); // Emerald color
+            doc.text('Dashboard Report', 20, 20);
+
+            // Date range
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${format(new Date(), 'MMMM dd, yyyy')}`, 20, 30);
+            doc.text(`Period: ${format(dateRange.from, 'MMM dd, yyyy')} - ${format(dateRange.to, 'MMM dd, yyyy')}`, 20, 36);
+
+            // Revenue Stats
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text('Revenue Statistics', 20, 50);
+            doc.setFontSize(10);
+            doc.text(`Total Revenue: ₹${(revenueStats.totalRevenue || 0).toLocaleString()}`, 30, 58);
+            doc.text(`Monthly Revenue: ₹${(revenueResponse?.data?.periodStats?.totalRevenue || 0).toLocaleString()}`, 30, 64);
+            doc.text(`Growth: +${revenueStats.growth || 0}%`, 30, 70);
+
+            // Dashboard Stats
+            doc.setFontSize(14);
+            doc.text('Key Metrics', 20, 85);
+            doc.setFontSize(10);
+            doc.text(`Active Sessions: ${(dashboardData.activeSessions || 0).toLocaleString()}`, 30, 93);
+            doc.text(`Total Clients: ${(dashboardData.clients || 0).toLocaleString()}`, 30, 99);
+
+            // Consultation Stats
+            doc.setFontSize(14);
+            doc.text('Consultation Statistics', 20, 114);
+            doc.setFontSize(10);
+            doc.text(`Total Consultations: ${consultationStats.totalConsultations?.toLocaleString() || 0}`, 30, 122);
+            doc.text(`Today's Consultations: ${consultationStats.todayConsultations?.toLocaleString() || 0}`, 30, 128);
+            doc.text(`Average Rating: ${consultationStats.averageRating?.toFixed(1) || 0}`, 30, 134);
+            doc.text(`Completion Rate: ${consultationStats.completionRate?.toFixed(1) || 0}%`, 30, 140);
+
+            // Top Astrologers
+            if (topAstrologers.length > 0) {
+                doc.setFontSize(14);
+                doc.text('Top Astrologers', 20, 155);
+                doc.setFontSize(10);
+                let yPos = 163;
+                topAstrologers.slice(0, 5).forEach((astrologer: any, idx: number) => {
+                    doc.text(`${idx + 1}. ${astrologer.name}`, 30, yPos);
+                    yPos += 6;
+                });
+            }
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Generated by Admin Dashboard', 20, 280);
+
+            // Save the PDF
+            doc.save(`dashboard-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+        }
+    };
 
     return (
         <div className="space-y-8">
             {/* Header Section with Cream Background */}
-            <div className="bg-[#FEFCE8] px-6 py-8 border-b">
+            <div className="bg-[#FEFCE8] dark:bg-slate-800 px-6 py-8 border-b">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 max-w-[1600px] mx-auto">
                     <div>
-                        <h2 className="text-4xl font-extrabold text-[#022c22]">Overview</h2>
-                        <p className="text-[#059669] font-semibold mt-1">
+                        <h2 className="text-4xl font-extrabold text-[#022c22] dark:text-slate-100">Overview</h2>
+                        <p className="text-[#059669] dark:text-emerald-400 font-semibold mt-1">
                             {format(new Date(), 'MMMM dd, yyyy')}
                         </p>
                     </div>
@@ -82,11 +164,11 @@ export default function AdminDashboard() {
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                        "w-[260px] justify-start text-left font-medium border-emerald-200 bg-white/50 backdrop-blur-sm",
+                                        "w-[260px] justify-start text-left font-medium border-emerald-200 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm !text-slate-900 dark:!text-slate-100",
                                         !dateRange && "text-muted-foreground"
                                     )}
                                 >
-                                    <CalendarIcon className="mr-2 h-4 w-4 text-emerald-600" />
+                                    <CalendarIcon className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
@@ -112,7 +194,12 @@ export default function AdminDashboard() {
                                 />
                             </PopoverContent>
                         </Popover>
-                        <Button className="bg-emerald-600 hover:bg-emerald-700">Download</Button>
+                        <Button 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={handleDownloadPDF}
+                        >
+                            Download
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -149,8 +236,10 @@ export default function AdminDashboard() {
                             <div className="text-3xl font-bold mb-2">{(dashboardData.activeSessions || 0).toLocaleString()}</div>
                             <div className="flex items-center text-xs font-medium">
                                 <TrendingUp className="h-3 w-3 mr-1 text-emerald-400" />
-                                <span className="text-emerald-400">+1.2%</span>
-                                <span className="text-white/40 ml-1.5 font-normal">from last months</span>
+                                <span className="text-emerald-400">
+                                    {dashboardData.activeSessionsGrowth ? `+${dashboardData.activeSessionsGrowth}%` : '+0%'}
+                                </span>
+                                <span className="text-white/40 ml-1.5 font-normal">from last period</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -160,11 +249,17 @@ export default function AdminDashboard() {
                             <CardTitle className="text-white/60 text-sm font-medium">Monthly Revenue</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold mb-2">₹{(revenueStats.monthlyRevenue || 67890).toLocaleString()}</div>
+                            <div className="text-3xl font-bold mb-2">
+                                ₹{(revenueResponse?.data?.periodStats?.totalRevenue || 0).toLocaleString()}
+                            </div>
                             <div className="flex items-center text-xs font-medium">
                                 <TrendingUp className="h-3 w-3 mr-1 text-emerald-400" />
-                                <span className="text-emerald-400">+1.2%</span>
-                                <span className="text-white/40 ml-1.5 font-normal">from last months</span>
+                                <span className="text-emerald-400">
+                                    {revenueResponse?.data?.periodStats?.growthPercentage 
+                                        ? `+${revenueResponse.data.periodStats.growthPercentage}%`
+                                        : '+0%'}
+                                </span>
+                                <span className="text-white/40 ml-1.5 font-normal">from last period</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -174,11 +269,13 @@ export default function AdminDashboard() {
                             <CardTitle className="text-white/60 text-sm font-medium">Total Clients</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold mb-2">{(dashboardData.clients || 5450).toLocaleString()}</div>
+                            <div className="text-3xl font-bold mb-2">{(dashboardData.clients || 0).toLocaleString()}</div>
                             <div className="flex items-center text-xs font-medium">
                                 <TrendingUp className="h-3 w-3 mr-1 text-emerald-400" />
-                                <span className="text-emerald-400">+1.2%</span>
-                                <span className="text-white/40 ml-1.5 font-normal">from last months</span>
+                                <span className="text-emerald-400">
+                                    {dashboardData.clientsGrowth ? `+${dashboardData.clientsGrowth}%` : '+0%'}
+                                </span>
+                                <span className="text-white/40 ml-1.5 font-normal">from last period</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -204,12 +301,22 @@ export default function AdminDashboard() {
                         <CardTitle className="text-emerald-900 text-lg font-bold italic">Daily Consultations</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-black text-emerald-950 mb-1">1,234</div>
+                        <div className="text-4xl font-black text-emerald-950 mb-1">
+                            {consultationStats.totalConsultations?.toLocaleString() || 0}
+                        </div>
                         <div className="text-sm font-medium text-emerald-700">
-                            Last 30 Days <span className="text-emerald-600 font-bold">+15%</span>
+                            Last {dateRange ? Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) : 30} Days
+                            {consultationStats.growthPercentage && (
+                                <span className="text-emerald-600 font-bold ml-2">
+                                    +{consultationStats.growthPercentage}%
+                                </span>
+                            )}
                         </div>
                         <div className="h-[200px] mt-6 bg-white/40 rounded-lg p-4">
-                            <Overview data={revenueChartData} color="#059669" type="bar" />
+                            <Overview data={consultationStats.dailyBreakdown?.map((item: any) => ({
+                                name: format(new Date(item.date), 'MMM dd'),
+                                total: item.count || 0
+                            })) || revenueGraphData} color="#059669" type="bar" />
                         </div>
                     </CardContent>
                 </Card>
@@ -220,49 +327,95 @@ export default function AdminDashboard() {
                         <CardTitle className="text-emerald-900 text-lg font-bold italic">Revenue Growth</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-black text-emerald-950 mb-1">₹55,678</div>
+                        <div className="text-4xl font-black text-emerald-950 mb-1">
+                            ₹{(revenueResponse?.data?.periodStats?.totalRevenue || 0).toLocaleString()}
+                        </div>
                         <div className="text-sm font-medium text-emerald-700">
-                            Last 30 Days <span className="text-emerald-600 font-bold">+10%</span>
+                            Last {dateRange ? Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) : 30} Days
+                            {revenueResponse?.data?.periodStats?.growthPercentage && (
+                                <span className="text-emerald-600 font-bold ml-2">
+                                    +{revenueResponse.data.periodStats.growthPercentage}%
+                                </span>
+                            )}
                         </div>
                         <div className="h-[200px] mt-6 bg-white/40 rounded-lg p-4">
-                            <Overview data={revenueChartData} color="#059669" type="line" />
+                            <Overview data={revenueGraphData} color="#059669" type="line" />
                         </div>
                     </CardContent>
                 </Card>
 
+                {/* Charts Section */}
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                    <Card className="col-span-4 border-emerald-100">
-                        <CardHeader className="border-b bg-emerald-50/30">
-                            <CardTitle className="text-emerald-900">Session Types (Chat / Call / Video)</CardTitle>
+                    <Card className="col-span-4 border-none shadow-sm shadow-emerald-100 overflow-hidden">
+                        <CardHeader className="border-b border-emerald-50 bg-white/80 backdrop-blur-sm">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-emerald-950 text-lg font-black">Consultation Channels</CardTitle>
+                                <div className="flex items-center gap-1.5 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live Analytics</span>
+                                </div>
+                            </div>
                         </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="text-3xl font-black text-emerald-950 mb-1">597.04...</div>
-                            <div className="text-xs font-semibold text-emerald-600 mb-6">Last 30 Days +2%</div>
-                            <div className="h-[300px] flex items-center justify-center bg-cyan-50/30 rounded-xl relative border border-cyan-100">
-                                {/* Placeholder for Pie Chart - Using Overview for now */}
-                                <Overview data={[{ name: 'Chat', total: 200 }, { name: 'Call', total: 189 }, { name: 'Video', total: 208 }]} type="pie" />
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                                <div className="md:col-span-7 h-[300px] relative order-2 md:order-1">
+                                    <Overview data={[
+                                        { name: 'Chat', total: consultationStats.channelBreakdown?.chat || 200 }, 
+                                        { name: 'Call', total: consultationStats.channelBreakdown?.call || 189 }, 
+                                        { name: 'Video', total: consultationStats.channelBreakdown?.video || 208 }
+                                    ]} type="pie" />
+                                </div>
+                                <div className="md:col-span-5 space-y-4 order-1 md:order-2">
+                                    <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                                        <p className="text-[10px] font-bold text-emerald-800/40 uppercase tracking-widest mb-1">Total Consultations</p>
+                                        <div className="text-4xl font-black text-emerald-950 tracking-tighter tabular-nums">
+                                            {(consultationStats.channelBreakdown?.chat || 200) + 
+                                             (consultationStats.channelBreakdown?.call || 189) + 
+                                             (consultationStats.channelBreakdown?.video || 208)}
+                                        </div>
+                                        <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center">
+                                            <TrendingUp className="h-3 w-3 mr-1" />
+                                            {consultationStats.channelGrowth ? `+${consultationStats.channelGrowth}%` : '+2.4%'} from last month
+                                        </p>
+                                    </div>
+                                    <div className="space-y-2 px-1">
+                                        {['Chat', 'Call', 'Video'].map((type, i) => (
+                                            <div key={type} className="flex items-center justify-between text-xs">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: ['#059669', '#10b981', '#34d399'][i] }} />
+                                                    <span className="font-bold text-emerald-900/60 uppercase">{type}</span>
+                                                </div>
+                                                <span className="font-black text-emerald-950 tabular-nums">
+                                                    {i === 0 ? (consultationStats.channelBreakdown?.chat || 200) : 
+                                                     i === 1 ? (consultationStats.channelBreakdown?.call || 189) : 
+                                                     (consultationStats.channelBreakdown?.video || 208)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="col-span-3 border-emerald-100">
-                        <CardHeader className="border-b bg-emerald-50/30">
-                            <CardTitle className="text-emerald-900">Top Performing Astrologers</CardTitle>
+                    <Card className="col-span-3 border-none shadow-sm shadow-emerald-100">
+                        <CardHeader className="border-b border-emerald-50 bg-white">
+                            <CardTitle className="text-emerald-950 text-lg font-black">Top Astrologers</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-6">
+                        <CardContent className="pt-6">
                             <div className="space-y-6">
                                 {topAstrologers.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-10">No top performers found</p>
+                                    <p className="text-sm text-muted-foreground text-center py-10 italic">No rankings available</p>
                                 ) : (
                                     topAstrologers.slice(0, 5).map((astrologer: any, idx: number) => (
-                                        <div key={astrologer._id} className="flex items-center">
-                                            <div className="h-6 w-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold mr-3">
+                                        <div key={astrologer._id} className="flex items-center group">
+                                            <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm font-black mr-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                                                 {idx + 1}
                                             </div>
-                                            <div className="flex-1 space-y-0.5">
-                                                <p className="text-sm font-bold text-emerald-950">{astrologer.name}</p>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-emerald-950 underline decoration-emerald-200 decoration-2 underline-offset-4 line-clamp-1">{astrologer.name}</p>
                                             </div>
-                                            <div className="font-bold text-emerald-600">
+                                            <div className="text-sm font-black text-emerald-600 whitespace-nowrap ml-2">
                                                 {idx === 0 ? '6.5' : idx === 1 ? '5.8' : '5.2'} hrs
                                             </div>
                                         </div>
@@ -273,61 +426,69 @@ export default function AdminDashboard() {
                     </Card>
                 </div>
 
-                {/* Astrologer Activity Section */}
-                <div className="grid gap-6 md:grid-cols-2">
-                    <Card className="border-emerald-100">
-                        <CardHeader className="border-b bg-emerald-50/30">
-                            <CardTitle className="text-emerald-900">Daily Astrologer Activity Analytics</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-6">
-                            <div className="bg-white border rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center text-emerald-600 mb-4">
-                                    <Users className="h-5 w-5 mr-2" />
-                                    <span className="font-semibold text-sm">Total Active Astrologers Today</span>
-                                </div>
-                                <div className="text-4xl font-black text-emerald-950 mb-1">42 Active</div>
-                                <div className="text-xs text-muted-foreground mb-4 font-medium">Out of 60 total astrologers</div>
-                                <div className="space-y-1.5">
-                                    <div className="flex justify-between text-[11px] font-bold text-emerald-900 uppercase tracking-tight">
-                                        <span>Active Rate</span>
-                                        <span>70%</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-emerald-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-600 rounded-full w-[70%]" />
-                                    </div>
-                                </div>
-                            </div>
+                {/* Activity Analytics */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-1.5 bg-emerald-600 rounded-full" />
+                        <h3 className="text-xl font-black text-emerald-950 uppercase tracking-tight">Astrologer Activity Analytics</h3>
+                    </div>
 
-                            <div className="bg-white border rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center text-emerald-600 mb-4">
-                                    <CalendarIcon className="h-5 w-5 mr-2" />
-                                    <span className="font-semibold text-sm">Engagement Hours Analytics</span>
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="border-none shadow-sm shadow-emerald-100 overflow-hidden">
+                            <CardHeader className="border-b border-emerald-50 bg-white/80">
+                                <CardTitle className="text-emerald-950 text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-emerald-600" />
+                                    Availability Overview
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-8">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <div className="text-4xl font-black text-emerald-950 tabular-nums">42 <span className="text-lg text-emerald-600/60 font-black">/ 60</span></div>
+                                        <p className="text-[10px] font-bold text-emerald-800/40 uppercase mt-1">Active Astrologers Today</p>
+                                    </div>
+                                    <div className="h-16 w-16 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                                        <div className="text-2xl font-black text-emerald-700">70<span className="text-xs">%</span></div>
+                                    </div>
                                 </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold text-emerald-900/60 uppercase tracking-widest">
+                                        <span>Daily Performance Rate</span>
+                                        <span className="text-emerald-700">High Engagement</span>
+                                    </div>
+                                    <div className="h-3 w-full bg-emerald-50 rounded-full p-0.5 border border-emerald-100 shadow-inner">
+                                        <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full w-[70%] shadow-[0_0_8px_rgba(16,185,129,0.3)] transition-all duration-1000" />
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Total Hours Today</p>
-                                        <p className="text-2xl font-black text-emerald-950">126.5</p>
+                                    <div className="p-4 bg-emerald-50/30 rounded-xl border border-emerald-100/30">
+                                        <p className="text-[10px] font-bold text-emerald-800/40 uppercase mb-1">Total Hours</p>
+                                        <p className="text-xl font-black text-emerald-950 tracking-tight">126.5 <span className="text-xs text-emerald-600">hrs</span></p>
                                     </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Avg Per Astrologer</p>
-                                        <p className="text-2xl font-black text-emerald-950">3.2</p>
+                                    <div className="p-4 bg-emerald-50/30 rounded-xl border border-emerald-100/30">
+                                        <p className="text-[10px] font-bold text-emerald-800/40 uppercase mb-1">Avg Session</p>
+                                        <p className="text-xl font-black text-emerald-950 tracking-tight">3.2 <span className="text-xs text-emerald-600">hrs</span></p>
                                     </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
 
-                    <Card className="border-emerald-100 overflow-hidden">
-                        <CardHeader className="border-b bg-emerald-50/30">
-                            <CardTitle className="text-emerald-900 flex items-center">
-                                <TrendingUp className="h-4 w-4 mr-2" />
-                                Hourly Engagement Today
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 h-[300px]">
-                            <Overview data={revenueChartData} type="bar" color="#059669" />
-                        </CardContent>
-                    </Card>
+                        <Card className="border-none shadow-sm shadow-emerald-100 overflow-hidden">
+                            <CardHeader className="border-b border-emerald-50 bg-white/80">
+                                <CardTitle className="text-emerald-950 text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4 text-emerald-600" />
+                                    Hourly Engagement Pulse
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                <div className="h-[280px]">
+                                    <Overview data={revenueGraphData} type="bar" color="#10b981" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </div>

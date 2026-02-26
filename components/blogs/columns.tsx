@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
-import { Eye, CheckCircle, XCircle } from "lucide-react"
-import { useApproveBlog, useRejectBlog } from "@/lib/hooks/use-blogs"
+import { Eye, CheckCircle, XCircle, RotateCcw } from "lucide-react"
+import { useApproveBlog, useRejectBlog, useRevertBlogStatus } from "@/lib/hooks/use-blogs"
 import { Blog } from "@/types"
 import { BlogDetailModal } from "./blog-detail-modal"
 import { RejectBlogModal } from "./reject-blog-modal"
+import { RevertBlogModal } from "./revert-blog-modal"
 
 export const columns: ColumnDef<Blog>[] = [
     {
@@ -83,9 +84,11 @@ export const columns: ColumnDef<Blog>[] = [
 const ActionCell = ({ blog }: { blog: Blog }) => {
     const [showDetails, setShowDetails] = useState(false)
     const [showRejectModal, setShowRejectModal] = useState(false)
+    const [showRevertModal, setShowRevertModal] = useState(false)
     
     const approveMutation = useApproveBlog()
     const rejectMutation = useRejectBlog()
+    const revertMutation = useRevertBlogStatus()
 
     const handleApprove = () => {
         approveMutation.mutate(blog._id)
@@ -96,8 +99,18 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
         setShowRejectModal(false)
     }
 
-    const isLoading = approveMutation.isPending || rejectMutation.isPending
+    const handleRevert = (reason: string) => {
+        revertMutation.mutate({ 
+            blogId: blog._id, 
+            currentStatus: blog.status as 'Approved' | 'Rejected',
+            reason
+        })
+        setShowRevertModal(false)
+    }
+
+    const isLoading = approveMutation.isPending || rejectMutation.isPending || revertMutation.isPending
     const isPending = blog.status === "Pending"
+    const canRevert = blog.status === "Approved" || blog.status === "Rejected"
 
     return (
         <>
@@ -133,6 +146,16 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
                             </DropdownMenuItem>
                         </>
                     )}
+
+                    {canRevert && (
+                        <DropdownMenuItem
+                            className="text-blue-600 cursor-pointer font-medium"
+                            onClick={() => setShowRevertModal(true)}
+                            disabled={isLoading}
+                        >
+                            <RotateCcw className="mr-2 h-4 w-4" /> Revert Status
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -147,6 +170,15 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
                 onClose={() => setShowRejectModal(false)}
                 onConfirm={handleReject}
                 blogTitle={blog.title}
+                loading={isLoading}
+            />
+
+            <RevertBlogModal
+                isOpen={showRevertModal}
+                onClose={() => setShowRevertModal(false)}
+                onConfirm={handleRevert}
+                blogTitle={blog.title}
+                currentStatus={blog.status as 'Approved' | 'Rejected'}
                 loading={isLoading}
             />
         </>

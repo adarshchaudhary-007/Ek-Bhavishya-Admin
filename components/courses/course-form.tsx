@@ -184,7 +184,7 @@ export function CourseForm(props: CourseFormProps) {
                             />
                             <div className="grid grid-cols-2 gap-4">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="category"
                                     render={({ field }) => (
                                         <FormItem>
@@ -197,7 +197,7 @@ export function CourseForm(props: CourseFormProps) {
                                     )}
                                 />
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="level"
                                     render={({ field }) => (
                                         <FormItem>
@@ -275,7 +275,7 @@ export function CourseForm(props: CourseFormProps) {
                                 <div key={field.id} className="flex gap-4 items-start border p-4 rounded-md relative">
                                     <div className="grid gap-4 flex-1">
                                         <FormField
-                                            control={form.control}
+                                            control={form.control as any}
                                             name={`modules.${index}.title`}
                                             render={({ field }) => (
                                                 <FormItem>
@@ -288,7 +288,7 @@ export function CourseForm(props: CourseFormProps) {
                                         />
                                         <div className="grid grid-cols-2 gap-4">
                                             <FormField
-                                                control={form.control}
+                                                control={form.control as any}
                                                 name={`modules.${index}.videoUrl`}
                                                 render={({ field }) => (
                                                     <FormItem>
@@ -300,7 +300,7 @@ export function CourseForm(props: CourseFormProps) {
                                                 )}
                                             />
                                             <FormField
-                                                control={form.control}
+                                                control={form.control as any}
                                                 name={`modules.${index}.duration`}
                                                 render={({ field }) => (
                                                     <FormItem>

@@ -32,8 +32,11 @@ export type Course = {
     thumbnail?: string
 }
 
+import { usePathname } from "next/navigation"
+
 const ActionCell = ({ course }: { course: Course }) => {
     const queryClient = useQueryClient()
+    const pathname = usePathname()
     const [showRejectModal, setShowRejectModal] = useState(false)
     const [showDetailModal, setShowDetailModal] = useState(false)
     const [rejectionReason, setRejectionReason] = useState("")
@@ -64,6 +67,7 @@ const ActionCell = ({ course }: { course: Course }) => {
 
     const isLoading = isApproving || isRejecting || isDeleting
     const isPending = course.status === 'pending' || course.status === 'Pending'
+    const isAdminCoursesPage = pathname.includes('/admin/admin-courses')
 
     return (
         <>
@@ -79,11 +83,13 @@ const ActionCell = ({ course }: { course: Course }) => {
                     <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetailModal(true)}>
                         <Eye className="mr-2 h-4 w-4" /> View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" asChild>
-                        <Link href={course.status === 'Pending' || course.status === 'Approved' || course.status === 'Rejected' ? `/admin/courses/${course._id}/edit` : `/admin/admin-courses/${course._id}/edit`}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Course
-                        </Link>
-                    </DropdownMenuItem>
+                    {isAdminCoursesPage && (
+                        <DropdownMenuItem className="cursor-pointer" asChild>
+                            <Link href={`/admin/admin-courses/${course._id}/edit`}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit Course
+                            </Link>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     {isPending && (
                         <>

@@ -87,3 +87,67 @@ export function useRejectBlog() {
         },
     });
 }
+
+/**
+ * Hook to revert blog status
+ * Implements optimistic updates and cache invalidation with rollback on error
+ */
+export function useRevertBlogStatus() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ blogId, currentStatus, reason }: { blogId: string; currentStatus: 'Approved' | 'Rejected'; reason: string }) => {
+            console.log('[useRevertBlogStatus] Reverting blog status:', blogId, 'Current status:', currentStatus, 'Reason:', reason);
+            return BlogService.revertBlogStatus(blogId, currentStatus, reason);
+        },
+        onMutate: async ({ blogId, currentStatus }) => {
+            // Cancel any outgoing refetches to avoid overwriting optimistic update
+            await queryClient.cancelQueries({ queryKey: queryKeys.blogs.lists() });
+
+            // Snapshot the previous value for rollback
+            const previousData = queryClient.getQueriesData({ queryKey: queryKeys.blogs.lists() });
+
+            // Determine the new status based on current status
+            const newStatus = currentStatus === 'Approved' ? 'Rejected' : 'Approved';
+
+            // Optimistically update to the new status
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.blogs.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.map((blog: any) =>
+                            blog._id === blogId
+                                ? { ...blog, status: newStatus }
+                                : blog
+                        ),
+                    };
+                }
+            );
+
+            // Return context with previous data for rollback
+            return { previousData };
+        },
+        onSuccess: (data) => {
+            console.log('[useRevertBlogStatus] Success response:', data);
+            toast.success(data.message || 'Blog status reverted successfully');
+
+            // Invalidate all blog queries to refetch fresh data
+            console.log('[useRevertBlogStatus] Invalidating blog cache');
+            queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all, refetchType: 'all' });
+        },
+        onError: (error: any, variables, context) => {
+            console.error('[useRevertBlogStatus] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to revert blog status';
+            toast.error(errorMessage);
+
+            // Rollback optimistic update on error
+            if (context?.previousData) {
+                context.previousData.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
+        },
+    });
+}

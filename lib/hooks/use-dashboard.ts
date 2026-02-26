@@ -11,6 +11,7 @@ import {
     ConsultationStatsResponse,
     RevenueStatsResponse,
     TopAstrologersResponse,
+    TopAstrologersParams,
     UsageResponse,
     UserActivityResponse,
     DateRange,
@@ -32,10 +33,10 @@ export function useDashboardStats() {
 /**
  * Hook to fetch consultation statistics
  */
-export function useConsultationStats() {
+export function useConsultationStats(dateRange?: DateRange) {
     return useQuery({
-        queryKey: queryKeys.dashboard.consultationStats(),
-        queryFn: () => DashboardService.getConsultationStats(),
+        queryKey: queryKeys.dashboard.consultationStats(dateRange),
+        queryFn: () => DashboardService.getConsultationStats(dateRange),
         staleTime: 2 * 60 * 1000, // 2 minutes
         refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes
     });
@@ -55,11 +56,12 @@ export function useRevenueStats(dateRange?: DateRange) {
 
 /**
  * Hook to fetch top performing astrologers
+ * @param params - Optional parameters including limit, startDate, endDate
  */
-export function useTopAstrologers() {
+export function useTopAstrologers(params?: TopAstrologersParams) {
     return useQuery({
-        queryKey: queryKeys.dashboard.topAstrologers(),
-        queryFn: () => DashboardService.getTopAstrologers(),
+        queryKey: queryKeys.dashboard.topAstrologers(params),
+        queryFn: () => DashboardService.getTopAstrologers(params),
         staleTime: 10 * 60 * 1000, // 10 minutes
     });
 }

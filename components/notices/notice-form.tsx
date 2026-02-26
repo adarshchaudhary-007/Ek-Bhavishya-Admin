@@ -40,6 +40,8 @@ import { useCreateNotice } from "@/lib/hooks/use-notices"
 import { useEffect, useState } from "react"
 import api from "@/lib/axios"
 import { toast } from "sonner"
+import { UserSearchInput } from "./user-search-input"
+import { PlatformUser } from "@/types"
 
 const noticeSchema = z.object({
     title: z.string().min(2, "Title is required"),
@@ -56,12 +58,14 @@ const noticeSchema = z.object({
         path: ["inApp"]
     }),
     scheduleDate: z.date().optional(),
+    scheduleTime: z.string().optional(),
 })
 
 type NoticeFormValues = z.infer<typeof noticeSchema>
 
 export function NoticeForm() {
-    const [users, setUsers] = useState<Array<{ _id: string; fullName?: string; email: string }>>([])
+    const [users, setUsers] = useState<PlatformUser[]>([])
+    const [filteredUsers, setFilteredUsers] = useState<PlatformUser[]>([])
     const [loadingUsers, setLoadingUsers] = useState(false)
 
     const form = useForm<NoticeFormValues>({
@@ -77,6 +81,7 @@ export function NoticeForm() {
                 email: false,
                 inApp: true,
             },
+            scheduleTime: "00:00",
         },
     })
 
@@ -89,7 +94,9 @@ export function NoticeForm() {
             setLoadingUsers(true)
             try {
                 const response = await api.get('/api/v1/admin/users')
-                setUsers(response.data.data || [])
+                const fetchedUsers = response.data.data || []
+                setUsers(fetchedUsers)
+                setFilteredUsers(fetchedUsers)
             } catch (error) {
                 toast.error("Failed to load users")
             } finally {
@@ -127,7 +134,7 @@ export function NoticeForm() {
     async function onSubmit(data: NoticeFormValues) {
         // Transform form data to API request format
         let user_ids: string[] = [];
-        
+
         if (data.userSelection === "all") {
             user_ids = users.map(u => u._id);
         } else if (data.userSelection === "specific") {
@@ -139,6 +146,12 @@ export function NoticeForm() {
             return;
         }
 
+        const combinedDateTime = data.scheduleDate ? new Date(data.scheduleDate) : null;
+        if (combinedDateTime && data.scheduleTime) {
+            const [hours, minutes] = data.scheduleTime.split(':').map(Number);
+            combinedDateTime.setHours(hours, minutes, 0, 0);
+        }
+
         const requestData = {
             title: data.title,
             message: data.message,
@@ -147,7 +160,7 @@ export function NoticeForm() {
             email_notification: data.channels.email,
             push_notification: data.channels.push,
             in_app_notification: data.channels.inApp,
-            schedule_send: data.scheduleDate ? data.scheduleDate.toISOString() : null,
+            schedule_send: combinedDateTime ? combinedDateTime.toISOString() : null,
         }
 
         createNotice(requestData, {
@@ -174,7 +187,7 @@ export function NoticeForm() {
                         </FormItem>
                     )}
                 />
-                
+
                 <FormField
                     control={form.control}
                     name="message"
@@ -192,7 +205,7 @@ export function NoticeForm() {
                         </FormItem>
                     )}
                 />
-                
+
                 <FormField
                     control={form.control}
                     name="type"
@@ -220,7 +233,7 @@ export function NoticeForm() {
                         </FormItem>
                     )}
                 />
-                
+
                 <FormField
                     control={form.control}
                     name="userSelection"
@@ -259,52 +272,58 @@ export function NoticeForm() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Select Users</FormLabel>
-                                <div className="border rounded-md p-4 max-h-64 overflow-y-auto space-y-2">
-                                    {loadingUsers ? (
-                                        <div className="text-center py-4 text-muted-foreground">Loading users...</div>
-                                    ) : users.length === 0 ? (
-                                        <div className="text-center py-4 text-muted-foreground">No users found</div>
-                                    ) : (
-                                        <>
-                                            <div className="flex items-center space-x-2 pb-2 border-b">
-                                                <Checkbox
-                                                    id="select-all"
-                                                    checked={field.value?.length === users.length}
-                                                    onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            field.onChange(users.map(u => u._id))
-                                                        } else {
-                                                            field.onChange([])
-                                                        }
-                                                    }}
-                                                />
-                                                <Label htmlFor="select-all" className="font-semibold cursor-pointer">
-                                                    Select All ({users.length} users)
-                                                </Label>
-                                            </div>
-                                            {users.map((user) => (
-                                                <div key={user._id} className="flex items-center space-x-2">
+                                <div className="space-y-3">
+                                    <UserSearchInput
+                                        users={users}
+                                        onFilteredUsersChange={setFilteredUsers}
+                                    />
+                                    <div className="border rounded-md p-4 max-h-64 overflow-y-auto space-y-2">
+                                        {loadingUsers ? (
+                                            <div className="text-center py-4 text-muted-foreground">Loading users...</div>
+                                        ) : filteredUsers.length === 0 ? (
+                                            <div className="text-center py-4 text-muted-foreground">No users found</div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center space-x-2 pb-2 border-b">
                                                     <Checkbox
-                                                        id={user._id}
-                                                        checked={field.value?.includes(user._id)}
+                                                        id="select-all"
+                                                        checked={field.value?.length === filteredUsers.length && filteredUsers.length > 0}
                                                         onCheckedChange={(checked) => {
-                                                            const currentValue = field.value || []
-                                                            const newValue = checked
-                                                                ? [...currentValue, user._id]
-                                                                : currentValue.filter((id) => id !== user._id)
-                                                            field.onChange(newValue)
+                                                            if (checked) {
+                                                                field.onChange(filteredUsers.map(u => u._id))
+                                                            } else {
+                                                                field.onChange([])
+                                                            }
                                                         }}
                                                     />
-                                                    <Label htmlFor={user._id} className="font-normal cursor-pointer flex-1">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm">{user.fullName || user.email}</span>
-                                                            <span className="text-xs text-muted-foreground">{user.email}</span>
-                                                        </div>
+                                                    <Label htmlFor="select-all" className="font-semibold cursor-pointer">
+                                                        Select All ({filteredUsers.length} users)
                                                     </Label>
                                                 </div>
-                                            ))}
-                                        </>
-                                    )}
+                                                {filteredUsers.map((user) => (
+                                                    <div key={user._id} className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id={user._id}
+                                                            checked={field.value?.includes(user._id)}
+                                                            onCheckedChange={(checked) => {
+                                                                const currentValue = field.value || []
+                                                                const newValue = checked
+                                                                    ? [...currentValue, user._id]
+                                                                    : currentValue.filter((id) => id !== user._id)
+                                                                field.onChange(newValue)
+                                                            }}
+                                                        />
+                                                        <Label htmlFor={user._id} className="font-normal cursor-pointer flex-1">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm">{user.fullName || user.email}</span>
+                                                                <span className="text-xs text-muted-foreground">{user.email}</span>
+                                                            </div>
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                                 <FormDescription>
                                     {field.value?.length || 0} user(s) selected
@@ -383,51 +402,76 @@ export function NoticeForm() {
                     )}
                 </div>
 
-                <FormField
-                    control={form.control}
-                    name="scheduleDate"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Schedule Send (Optional)</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="scheduleDate"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Schedule Date (Optional)</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full pl-3 text-left font-normal",
+                                                    !field.value && "text-muted-foreground"
+                                                )}
+                                            >
+                                                {field.value ? (
+                                                    format(field.value, "PPP")
+                                                ) : (
+                                                    <span>Pick a date</span>
+                                                )}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={field.value}
+                                            onSelect={field.onChange}
+                                            disabled={(date) =>
+                                                date < new Date(new Date().setHours(0, 0, 0, 0))
+                                            }
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormDescription>
+                                    Leave blank to send immediately.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {form.watch("scheduleDate") && (
+                        <FormField
+                            control={form.control}
+                            name="scheduleTime"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Schedule Time</FormLabel>
                                     <FormControl>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-[240px] pl-3 text-left font-normal",
-                                                !field.value && "text-muted-foreground"
-                                            )}
-                                        >
-                                            {field.value ? (
-                                                format(field.value, "PPP")
-                                            ) : (
-                                                <span>Pick a date</span>
-                                            )}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
+                                        <Input
+                                            type="time"
+                                            {...field}
+                                            className="w-full"
+                                        />
                                     </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={field.onChange}
-                                        disabled={(date) =>
-                                            date < new Date()
-                                        }
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                            <FormDescription>
-                                Leave blank to send immediately.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
+                                    <FormDescription>
+                                        Choose when the notice should be sent.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     )}
-                />
-                
+                </div>
+
                 <Button type="submit" disabled={isPending}>
                     {isPending ? "Sending..." : "Create Notice"}
                 </Button>
