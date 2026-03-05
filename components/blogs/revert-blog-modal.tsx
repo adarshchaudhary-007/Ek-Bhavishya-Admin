@@ -60,7 +60,7 @@ export function RevertBlogModal({
                 <DialogHeader>
                     <DialogTitle>Revert Blog Status</DialogTitle>
                     <DialogDescription>
-                        You are reverting the status of "{blogTitle}" from {currentStatus} to {newStatus}.
+                        You are reverting the status of &quot;{blogTitle}&quot; from {currentStatus} to {newStatus}.
                     </DialogDescription>
                 </DialogHeader>
 

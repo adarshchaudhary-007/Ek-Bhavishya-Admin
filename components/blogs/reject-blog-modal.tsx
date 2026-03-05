@@ -48,7 +48,7 @@ export function RejectBlogModal({
                 <DialogHeader>
                     <DialogTitle>Reject Blog</DialogTitle>
                     <DialogDescription>
-                        Provide a reason for rejecting "{blogTitle}"
+                        Provide a reason for rejecting &quot;{blogTitle}&quot;
                     </DialogDescription>
                 </DialogHeader>
 

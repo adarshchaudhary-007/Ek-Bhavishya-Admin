@@ -5,20 +5,28 @@ import { useRouter } from 'next/navigation';
 import { AdminUser, LoginCredentials, AuthResponse } from '@/types';
 import api from '@/lib/axios';
 
+export type UserRole = 'user' | 'astrologer' | 'admin' | 'seller';
+
 interface AuthContextType {
     user: AdminUser | null;
     loading: boolean;
-    login: (credentials: LoginCredentials) => Promise<void>;
+    role: UserRole | null;
+    loginAdmin: (credentials: LoginCredentials) => Promise<void>;
+    loginUser: (credentials: LoginCredentials) => Promise<void>;
+    login: (credentials: LoginCredentials, role?: UserRole) => Promise<void>;
     logout: () => void;
     isAuthenticated: boolean;
     refreshToken: () => Promise<void>;
+    hasToken: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AdminUser | null>(null);
+    const [role, setRole] = useState<UserRole | null>(null);
     const [loading, setLoading] = useState(true);
+    const [hasToken, setHasToken] = useState(false);
     const router = useRouter();
 
     // Check if token is expired
@@ -47,6 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const token = localStorage.getItem('token');
                 const storedUser = localStorage.getItem('user');
+                const storedRole = (localStorage.getItem('role') as UserRole) || null;
+
+                setHasToken(!!token && token !== 'undefined' && token !== 'null');
 
                 if (token && token !== 'undefined' && token !== 'null') {
                     // Check if token is expired
@@ -54,7 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         console.log('Token expired, clearing auth data');
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
+                        localStorage.removeItem('role');
                         setUser(null);
+                        setRole(null);
                         setLoading(false);
                         return;
                     }
@@ -63,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
                         const userData = JSON.parse(storedUser);
                         setUser(userData);
-                        console.log('Auth restored from localStorage:', userData);
+                        setRole(storedRole);
+                        console.log('Auth restored from localStorage:', userData, 'Role:', storedRole);
                     }
                 } else {
                     console.log('No valid token found');
@@ -72,7 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.error('Auth initialization failed:', error);
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                localStorage.removeItem('role');
                 setUser(null);
+                setRole(null);
             } finally {
                 setLoading(false);
             }
@@ -81,8 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         initializeAuth();
     }, []);
 
-    // Login function using admin API
-    const login = async (credentials: LoginCredentials): Promise<void> => {
+    // Login function for admin using admin API
+    const loginAdmin = async (credentials: LoginCredentials): Promise<void> => {
         try {
             setLoading(true);
             const response = await api.post<AuthResponse>('/api/v1/admin/login', credentials);
@@ -93,11 +109,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Store auth data
                 localStorage.setItem('token', token);
                 localStorage.setItem('user', JSON.stringify(admin));
+                localStorage.setItem('role', 'admin');
                 
                 // Update state
                 setUser(admin);
+                setRole('admin');
+                setHasToken(true);
                 
-                console.log('Login successful:', admin);
+                console.log('Admin login successful:', admin);
                 
                 // Redirect to admin dashboard
                 router.push('/admin');
@@ -105,10 +124,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 throw new Error('Login failed: Invalid response');
             }
         } catch (error: any) {
-            console.error('Login error:', error);
+            console.error('Admin login error:', error);
             throw error;
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Login function for user using user API
+    const loginUser = async (credentials: LoginCredentials): Promise<void> => {
+        try {
+            setLoading(true);
+            const response = await api.post<any>('/api/v1/user/login', credentials);
+
+            if (response.data.success || response.data.token) {
+                const token = response.data.token;
+                const userData = response.data.user || response.data;
+                const userRole = response.data.user?.role || 'user';
+                
+                // Store auth data
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(userData));
+                localStorage.setItem('role', userRole);
+                
+                // Update state
+                setUser(userData);
+                setRole(userRole as UserRole);
+                setHasToken(true);
+                
+                console.log('User login successful:', userData);
+                
+                // Redirect to user dashboard
+                router.push('/dashboard');
+            } else {
+                throw new Error('Login failed: Invalid response');
+            }
+        } catch (error: any) {
+            console.error('User login error:', error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Generic login function that auto-detects role
+    const login = async (credentials: LoginCredentials, role?: UserRole): Promise<void> => {
+        // If role is explicitly provided, use that endpoint
+        if (role === 'admin') {
+            return loginAdmin(credentials);
+        } else if (role === 'user') {
+            return loginUser(credentials);
+        }
+        
+        // Otherwise, try admin first, then fall back to user
+        try {
+            await loginAdmin(credentials);
+        } catch (adminError: any) {
+            // If admin login fails, try user login
+            console.log('Admin login failed, trying user login...');
+            try {
+                await loginUser(credentials);
+            } catch (userError: any) {
+                // Both failed, throw the user error
+                throw userError;
+            }
         }
     };
 
@@ -116,7 +195,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const logout = (): void => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('role');
         setUser(null);
+        setRole(null);
+        setHasToken(false);
         console.log('User logged out');
         router.push('/login');
     };
@@ -152,10 +234,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const value: AuthContextType = {
         user,
         loading,
+        role,
         login,
+        loginAdmin,
+        loginUser,
         logout,
         isAuthenticated: !!user,
         refreshToken,
+        hasToken,
     };
 
     return (

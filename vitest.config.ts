@@ -6,7 +6,6 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
-    singleThread: true,
   },
   resolve: {
     alias: {

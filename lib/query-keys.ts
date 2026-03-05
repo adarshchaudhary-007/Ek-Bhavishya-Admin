@@ -9,91 +9,110 @@ export const queryKeys = {
     // Authentication
     auth: {
         all: ['auth'] as const,
-        status: () => [...queryKeys.auth.all, 'status'] as const,
+        status: () => ['auth', 'status'] as const,
     },
 
     // Sellers
     sellers: {
         all: ['sellers'] as const,
-        lists: () => [...queryKeys.sellers.all, 'list'] as const,
-        list: (params?: PaginationParams) => [...queryKeys.sellers.lists(), params] as const,
-        details: () => [...queryKeys.sellers.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.sellers.details(), id] as const,
+        lists: () => ['sellers', 'list'] as const,
+        list: (params?: PaginationParams) => ['sellers', 'list', params] as const,
+        details: () => ['sellers', 'detail'] as const,
+        detail: (id: string) => ['sellers', 'detail', id] as const,
     },
 
     // Notices
     notices: {
         all: ['notices'] as const,
-        lists: () => [...queryKeys.notices.all, 'list'] as const,
-        list: (params?: PaginationParams) => [...queryKeys.notices.lists(), params] as const,
-        details: () => [...queryKeys.notices.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.notices.details(), id] as const,
-        notifications: () => [...queryKeys.notices.all, 'notifications'] as const,
+        lists: () => ['notices', 'list'] as const,
+        list: (params?: PaginationParams) => ['notices', 'list', params] as const,
+        details: () => ['notices', 'detail'] as const,
+        detail: (id: string) => ['notices', 'detail', id] as const,
+        notifications: () => ['notices', 'notifications'] as const,
         notificationsByNotice: (noticeId: string, params?: PaginationParams) => 
-            [...queryKeys.notices.notifications(), noticeId, params] as const,
+            ['notices', 'notifications', noticeId, params] as const,
     },
 
     // Blogs
     blogs: {
         all: ['blogs'] as const,
-        lists: () => [...queryKeys.blogs.all, 'list'] as const,
-        list: (params?: BlogFilterParams) => [...queryKeys.blogs.lists(), params] as const,
-        details: () => [...queryKeys.blogs.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.blogs.details(), id] as const,
+        lists: () => ['blogs', 'list'] as const,
+        list: (params?: BlogFilterParams) => ['blogs', 'list', params] as const,
+        details: () => ['blogs', 'detail'] as const,
+        detail: (id: string) => ['blogs', 'detail', id] as const,
     },
 
     // Courses
     courses: {
         all: ['courses'] as const,
-        lists: () => [...queryKeys.courses.all, 'list'] as const,
-        list: (params?: PaginationParams) => [...queryKeys.courses.lists(), params] as const,
+        lists: () => ['courses', 'list'] as const,
+        list: (params?: PaginationParams) => ['courses', 'list', params] as const,
         adminCourses: {
             all: ['admin-courses'] as const,
-            lists: () => [...queryKeys.courses.adminCourses.all, 'list'] as const,
-            list: (params?: PaginationParams) => [...queryKeys.courses.adminCourses.lists(), params] as const,
+            lists: () => ['admin-courses', 'list'] as const,
+            list: (params?: PaginationParams) => ['admin-courses', 'list', params] as const,
         },
-        details: () => [...queryKeys.courses.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.courses.details(), id] as const,
+        details: () => ['courses', 'detail'] as const,
+        detail: (id: string) => ['courses', 'detail', id] as const,
     },
 
     // Astrologers
     astrologers: {
         all: ['astrologers'] as const,
-        lists: () => [...queryKeys.astrologers.all, 'list'] as const,
-        list: (params?: PaginationParams) => [...queryKeys.astrologers.lists(), params] as const,
-        details: () => [...queryKeys.astrologers.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.astrologers.details(), id] as const,
+        lists: () => ['astrologers', 'list'] as const,
+        list: (params?: PaginationParams) => ['astrologers', 'list', params] as const,
+        details: () => ['astrologers', 'detail'] as const,
+        detail: (id: string) => ['astrologers', 'detail', id] as const,
         top: (params?: { limit?: number; startDate?: string; endDate?: string }) => 
-            [...queryKeys.astrologers.all, 'top', params] as const,
+            ['astrologers', 'top', params] as const,
     },
 
     // Dashboard
     dashboard: {
         all: ['dashboard'] as const,
-        stats: () => [...queryKeys.dashboard.all, 'stats'] as const,
-        consultationStats: (dateRange?: DateRange) => [...queryKeys.dashboard.all, 'consultation-stats', dateRange] as const,
-        revenueStats: (dateRange?: DateRange) => [...queryKeys.dashboard.all, 'revenue-stats', dateRange] as const,
+        stats: () => ['dashboard', 'stats'] as const,
+        consultationStats: (dateRange?: DateRange) => ['dashboard', 'consultation-stats', dateRange] as const,
+        revenueStats: (dateRange?: DateRange) => ['dashboard', 'revenue-stats', dateRange] as const,
         topAstrologers: (params?: { limit?: number; startDate?: string; endDate?: string }) => 
-            [...queryKeys.dashboard.all, 'top-astrologers', params] as const,
-        dailyUsage: (params?: UsageParams) => [...queryKeys.dashboard.all, 'daily-usage', params] as const,
-        userActivity: () => [...queryKeys.dashboard.all, 'user-activity'] as const,
+            ['dashboard', 'top-astrologers', params] as const,
+        dailyUsage: (params?: UsageParams) => ['dashboard', 'daily-usage', params] as const,
+        userActivity: () => ['dashboard', 'user-activity'] as const,
     },
 
     // Users (existing)
     users: {
         all: ['users'] as const,
-        lists: () => [...queryKeys.users.all, 'list'] as const,
-        list: (params?: PaginationParams) => [...queryKeys.users.lists(), params] as const,
-        details: () => [...queryKeys.users.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.users.details(), id] as const,
+        lists: () => ['users', 'list'] as const,
+        list: (params?: PaginationParams) => ['users', 'list', params] as const,
+        details: () => ['users', 'detail'] as const,
+        detail: (id: string) => ['users', 'detail', id] as const,
     },
 
     // Calls (existing)
     calls: {
         all: ['calls'] as const,
-        lists: () => [...queryKeys.calls.all, 'list'] as const,
-        list: (params?: PaginationParams) => [...queryKeys.calls.lists(), params] as const,
-        reports: () => [...queryKeys.calls.all, 'reports'] as const,
+        lists: () => ['calls', 'list'] as const,
+        list: (params?: PaginationParams) => ['calls', 'list', params] as const,
+        reports: () => ['calls', 'reports'] as const,
+    },
+
+    // User App (frontend user role)
+    userApp: {
+        all: ['user-app'] as const,
+        astrologers: () => ['user-app', 'astrologers'] as const,
+        courses: () => ['user-app', 'courses'] as const,
+        remedies: () => ['user-app', 'remedies'] as const,
+        wallet: {
+            all: ['user-app', 'wallet'] as const,
+            summary: () => ['user-app', 'wallet', 'summary'] as const,
+            transactions: () => ['user-app', 'wallet', 'transactions'] as const,
+        },
+        chat: {
+            all: ['user-app', 'chat'] as const,
+            conversations: () => ['user-app', 'chat', 'conversations'] as const,
+            messages: (conversationId: string) =>
+                ['user-app', 'chat', 'messages', conversationId] as const,
+        },
     },
 } as const;
 

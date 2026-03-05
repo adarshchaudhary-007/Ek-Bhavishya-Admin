@@ -239,7 +239,7 @@ export function UpdateNoticeModal({ isOpen, onClose, notice }: UpdateNoticeModal
                         </Select>
                         {notice.type && !VALID_NOTICE_TYPES.some(t => t.value === notice.type) && (
                             <p className="text-xs text-amber-600 dark:text-amber-400">
-                                Original type "{notice.type}" was legacy — auto-mapped to a valid type.
+                                Original type &quot;{notice.type}&quot; was legacy - auto-mapped to a valid type.
                             </p>
                         )}
                     </div>

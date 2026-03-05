@@ -27,7 +27,7 @@ const moduleSchema = z.object({
     _id: z.string().optional(),
     title: z.string().min(1, "Module title is required"),
     description: z.string(),
-    videoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    videoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")).or(z.literal("")),
     duration: z.string().optional(),
     order: z.number().int().min(0),
 })
@@ -40,8 +40,8 @@ const courseSchema = z.object({
     level: z.enum(["Beginner", "Intermediate", "Advanced"]),
     instructor: z.string().min(2, "Instructor name is required"),
     thumbnail: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-    tags: z.array(z.string()).default([]),
-    isFeatured: z.boolean().default(false),
+    tags: z.array(z.string()).min(0),
+    isFeatured: z.boolean(),
     modules: z.array(moduleSchema),
 })
 
@@ -55,6 +55,19 @@ export function CourseForm(props: CourseFormProps) {
     const { initialData } = props;
     const router = useRouter();
 
+type ModuleFormValue = z.infer<typeof moduleSchema>;
+
+const defaultModules: ModuleFormValue[] = initialData?.modules?.map((m, i) => ({
+        _id: m._id,
+        title: m.title,
+        description: m.description || "",
+        videoUrl: m.videoUrl || "",
+        duration: m.duration?.toString() || "0",
+        order: m.order ?? i,
+    })) ?? [
+        { title: "Introduction", description: "", videoUrl: "", duration: "10", order: 0 }
+    ];
+
     const form = useForm<CourseFormValues>({
         resolver: zodResolver(courseSchema),
         defaultValues: {
@@ -65,16 +78,10 @@ export function CourseForm(props: CourseFormProps) {
             level: initialData?.level || "Beginner",
             instructor: (initialData as any)?.instructor || "",
             thumbnail: initialData?.thumbnail || "",
-            tags: initialData?.tags || [],
-            isFeatured: initialData?.isFeatured || false,
-            modules: initialData?.modules?.map((m, i) => ({
-                ...m,
-                order: m.order ?? i,
-                duration: m.duration?.toString() || "0" // Keep as string for input, convert on submit
-            })) || [
-                    { title: "Introduction", description: "", videoUrl: "", duration: "10", order: 0 }
-                ],
-        },
+            tags: initialData?.tags ?? [],
+            isFeatured: initialData?.isFeatured ?? false,
+            modules: defaultModules,
+        } as CourseFormValues,
     })
 
     const { fields, append, remove } = useFieldArray({

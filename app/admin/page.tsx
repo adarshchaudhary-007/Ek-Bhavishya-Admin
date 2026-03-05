@@ -72,12 +72,6 @@ export default function AdminDashboard() {
         total: item.revenue || 0
     })) || [];
 
-    // Use revenue graph from API if available
-    const revenueGraphData = revenueResponse?.data?.revenueGraph?.map((item: any) => ({
-        name: format(new Date(item.date), 'MMM dd'),
-        total: item.amount || 0
-    })) || revenueChartData;
-
     const topAstrologers = topAstrologersResponse?.data || [];
 
     const handleDownloadPDF = async () => {
@@ -103,7 +97,7 @@ export default function AdminDashboard() {
             doc.text('Revenue Statistics', 20, 50);
             doc.setFontSize(10);
             doc.text(`Total Revenue: ₹${(revenueStats.totalRevenue || 0).toLocaleString()}`, 30, 58);
-            doc.text(`Monthly Revenue: ₹${(revenueResponse?.data?.periodStats?.totalRevenue || 0).toLocaleString()}`, 30, 64);
+            doc.text(`Monthly Revenue: ₹${(revenueStats.periodRevenue || 0).toLocaleString()}`, 30, 64);
             doc.text(`Growth: +${revenueStats.growth || 0}%`, 30, 70);
 
             // Dashboard Stats
@@ -250,13 +244,13 @@ export default function AdminDashboard() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold mb-2">
-                                ₹{(revenueResponse?.data?.periodStats?.totalRevenue || 0).toLocaleString()}
+                                ₹{(revenueStats.periodRevenue || 0).toLocaleString()}
                             </div>
                             <div className="flex items-center text-xs font-medium">
                                 <TrendingUp className="h-3 w-3 mr-1 text-emerald-400" />
                                 <span className="text-emerald-400">
-                                    {revenueResponse?.data?.periodStats?.growthPercentage 
-                                        ? `+${revenueResponse.data.periodStats.growthPercentage}%`
+                                    {revenueStats.growth 
+                                        ? `+${revenueStats.growth}%`
                                         : '+0%'}
                                 </span>
                                 <span className="text-white/40 ml-1.5 font-normal">from last period</span>
@@ -306,17 +300,9 @@ export default function AdminDashboard() {
                         </div>
                         <div className="text-sm font-medium text-emerald-700">
                             Last {dateRange ? Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) : 30} Days
-                            {consultationStats.growthPercentage && (
-                                <span className="text-emerald-600 font-bold ml-2">
-                                    +{consultationStats.growthPercentage}%
-                                </span>
-                            )}
                         </div>
                         <div className="h-[200px] mt-6 bg-white/40 rounded-lg p-4">
-                            <Overview data={consultationStats.dailyBreakdown?.map((item: any) => ({
-                                name: format(new Date(item.date), 'MMM dd'),
-                                total: item.count || 0
-                            })) || revenueGraphData} color="#059669" type="bar" />
+                            <Overview data={revenueChartData} color="#059669" type="bar" />
                         </div>
                     </CardContent>
                 </Card>
@@ -328,18 +314,18 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-4xl font-black text-emerald-950 mb-1">
-                            ₹{(revenueResponse?.data?.periodStats?.totalRevenue || 0).toLocaleString()}
+                            ₹{(revenueStats.periodRevenue || 0).toLocaleString()}
                         </div>
                         <div className="text-sm font-medium text-emerald-700">
                             Last {dateRange ? Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) : 30} Days
-                            {revenueResponse?.data?.periodStats?.growthPercentage && (
+                            {revenueStats.growth && (
                                 <span className="text-emerald-600 font-bold ml-2">
-                                    +{revenueResponse.data.periodStats.growthPercentage}%
+                                    +{revenueStats.growth}%
                                 </span>
                             )}
                         </div>
                         <div className="h-[200px] mt-6 bg-white/40 rounded-lg p-4">
-                            <Overview data={revenueGraphData} color="#059669" type="line" />
+                            <Overview data={revenueChartData} color="#059669" type="line" />
                         </div>
                     </CardContent>
                 </Card>
@@ -360,38 +346,37 @@ export default function AdminDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                                 <div className="md:col-span-7 h-[300px] relative order-2 md:order-1">
                                     <Overview data={[
-                                        { name: 'Chat', total: consultationStats.channelBreakdown?.chat || 200 }, 
-                                        { name: 'Call', total: consultationStats.channelBreakdown?.call || 189 }, 
-                                        { name: 'Video', total: consultationStats.channelBreakdown?.video || 208 }
+                                        { name: 'Chat', total: 200 }, 
+                                        { name: 'Call', total: 189 }, 
+                                        { name: 'Video', total: 208 }
                                     ]} type="pie" />
                                 </div>
                                 <div className="md:col-span-5 space-y-4 order-1 md:order-2">
                                     <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
                                         <p className="text-[10px] font-bold text-emerald-800/40 uppercase tracking-widest mb-1">Total Consultations</p>
                                         <div className="text-4xl font-black text-emerald-950 tracking-tighter tabular-nums">
-                                            {(consultationStats.channelBreakdown?.chat || 200) + 
-                                             (consultationStats.channelBreakdown?.call || 189) + 
-                                             (consultationStats.channelBreakdown?.video || 208)}
+                                            {200 + 189 + 208}
                                         </div>
                                         <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center">
                                             <TrendingUp className="h-3 w-3 mr-1" />
-                                            {consultationStats.channelGrowth ? `+${consultationStats.channelGrowth}%` : '+2.4%'} from last month
+                                            +2.4% from last month
                                         </p>
                                     </div>
                                     <div className="space-y-2 px-1">
-                                        {['Chat', 'Call', 'Video'].map((type, i) => (
-                                            <div key={type} className="flex items-center justify-between text-xs">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: ['#059669', '#10b981', '#34d399'][i] }} />
-                                                    <span className="font-bold text-emerald-900/60 uppercase">{type}</span>
+                                        {['Chat', 'Call', 'Video'].map((type, i) => {
+                                            const channelValues = [200, 189, 208];
+                                            return (
+                                                <div key={type} className="flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: ['#059669', '#10b981', '#34d399'][i] }} />
+                                                        <span className="font-bold text-emerald-900/60 uppercase">{type}</span>
+                                                    </div>
+                                                    <span className="font-black text-emerald-950 tabular-nums">
+                                                        {channelValues[i]}
+                                                    </span>
                                                 </div>
-                                                <span className="font-black text-emerald-950 tabular-nums">
-                                                    {i === 0 ? (consultationStats.channelBreakdown?.chat || 200) : 
-                                                     i === 1 ? (consultationStats.channelBreakdown?.call || 189) : 
-                                                     (consultationStats.channelBreakdown?.video || 208)}
-                                                </span>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -484,7 +469,7 @@ export default function AdminDashboard() {
                             </CardHeader>
                             <CardContent className="pt-6">
                                 <div className="h-[280px]">
-                                    <Overview data={revenueGraphData} type="bar" color="#10b981" />
+                                    <Overview data={revenueChartData} type="bar" color="#10b981" />
                                 </div>
                             </CardContent>
                         </Card>

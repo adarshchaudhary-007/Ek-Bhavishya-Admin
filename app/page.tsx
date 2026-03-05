@@ -2,10 +2,41 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Star, Sparkles, Moon, Sun } from 'lucide-react';
+import { Star, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
+  const { isAuthenticated, role, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && role) {
+      // Redirect authenticated users to their respective dashboards
+      if (role === 'admin') {
+        router.push('/admin');
+      } else if (role === 'user') {
+        router.push('/user/dashboard');
+      } else if (role === 'astrologer') {
+        router.push('/astrologer/dashboard');
+      } else if (role === 'seller') {
+        router.push('/seller/dashboard');
+      }
+    }
+  }, [isAuthenticated, role, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+        <div className="animate-spin">
+          <Sparkles className="h-12 w-12 text-primary" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-950 text-white">
       {/* Background Glow */}
@@ -39,7 +70,7 @@ export default function Home() {
             <Sparkles className="h-12 w-12 text-primary" />
           </div>
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-7xl">
-            Welcome to <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Ek Bhavishya</span>
+            Welcome to <span className="bg-linear-to-r from-primary to-purple-400 bg-clip-text text-transparent">Ek Bhavishya</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-slate-400">
             The most advanced management system for modern astrology services.

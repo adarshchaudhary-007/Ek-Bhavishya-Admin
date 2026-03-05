@@ -34,10 +34,10 @@ export default function ReportsPage() {
         refetch()
     }
 
-    const totalSessions = usageData?.data?.reduce((acc, curr) => acc + curr.sessions, 0) || 0
-    const totalNewUsers = usageData?.data?.reduce((acc, curr) => acc + curr.newUsers, 0) || 0
+    const totalSessions = usageData?.data?.reduce((acc, curr) => acc + (curr.sessions ?? 0), 0) || 0
+    const totalNewUsers = usageData?.data?.reduce((acc, curr) => acc + (curr.newUsers ?? 0), 0) || 0
     const avgActiveUsers = usageData?.data?.length
-        ? Math.round(usageData.data.reduce((acc, curr) => acc + curr.activeUsers, 0) / usageData.data.length)
+        ? Math.round(usageData.data.reduce((acc, curr) => acc + (curr.activeUsers ?? 0), 0) / usageData.data.length)
         : 0
 
     return (

@@ -471,3 +471,83 @@ export interface SuspendAstrologerRequest {
 export interface UnsuspendAstrologerRequest {
     id: string;
 }
+
+// User App Types (frontend user role)
+export interface UserAstrologer {
+    _id: string;
+    name: string;
+    expertise: string[];
+    rating: number;
+    pricePerMinute: number;
+    isAvailable: boolean;
+}
+
+export interface UserCourse {
+    _id: string;
+    title: string;
+    description: string;
+    instructor: string;
+    duration?: string;
+    price: number;
+    rating: number;
+    students: number;
+    thumbnail?: string;
+}
+
+export interface UserRemedy {
+    _id: string;
+    name: string;
+    category: string;
+    description: string;
+    price: number;
+    astrologer: string;
+    likes: number;
+}
+
+export interface WalletSummary {
+    balance: number;
+    totalSpent: number;
+    totalAdded: number;
+    pendingRefunds: number;
+}
+
+export interface WalletTransaction {
+    id: string;
+    type: 'credit' | 'debit';
+    description: string;
+    amount: number;
+    date: string;
+    status: string;
+}
+
+export interface ChatConversation {
+    _id: string;
+    participantName: string;
+    participantAvatar?: string;
+    lastMessage: string;
+    lastMessageTime: string;
+    unreadCount: number;
+}
+
+export interface ChatMessage {
+    _id: string;
+    conversationId: string;
+    content: string;
+    sender: string;
+    createdAt: string;
+}
+
+export interface UserListResponse<T> {
+    success: boolean;
+    data: T[];
+}
+
+export interface UserWalletResponse {
+    success: boolean;
+    data: WalletSummary;
+}
+
+export interface UserChatMessagesResponse {
+    success: boolean;
+    data: ChatMessage[];
+}

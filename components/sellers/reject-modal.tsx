@@ -27,7 +27,7 @@ export function RejectModal({
 }: RejectModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Reject Seller</DialogTitle>
                     <DialogDescription>

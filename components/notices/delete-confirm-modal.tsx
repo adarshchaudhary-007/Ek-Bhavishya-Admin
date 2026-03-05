@@ -36,8 +36,8 @@ export function DeleteConfirmModal({
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    <div className="bg-red-50 p-3 rounded">
-                        <p className="text-sm font-medium text-red-900">"{noticeTitle}"</p>
+                    <div className="rounded bg-red-50 p-3">
+                        <p className="text-sm font-medium text-red-900">&quot;{noticeTitle}&quot;</p>
                     </div>
                     <p className="text-sm text-gray-600">
                         This action cannot be undone. The notice and all its delivery records will be permanently deleted.

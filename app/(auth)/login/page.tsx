@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Moon, Star } from 'lucide-react';
+import { Eye, EyeOff, Star } from 'lucide-react';
 
 const loginSchema = z.object({
     email: z.string().email('Please enter a valid email address'),
@@ -22,7 +23,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-    const { login } = useAuth();
+    const { loginUser } = useAuth();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -42,15 +43,24 @@ export default function LoginPage() {
     const onSubmit = async (data: LoginFormValues) => {
         setLoading(true);
         try {
-            await login({
+            await loginUser({
                 email: data.email,
                 password: data.password,
             });
             toast.success('Logged in successfully');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Login error:', error);
-            const errorMessage = error.response?.data?.message || error.message || 'Invalid email or password';
-            toast.error(errorMessage);
+            const fallbackMessage = 'Invalid email or password';
+            const errorMessage =
+                typeof error === 'object' &&
+                error !== null &&
+                'response' in error &&
+                typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+                    ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+                    : error instanceof Error
+                      ? error.message
+                      : fallbackMessage;
+            toast.error(errorMessage || fallbackMessage);
         } finally {
             setLoading(false);
         }
@@ -64,7 +74,7 @@ export default function LoginPage() {
                 </div>
                 <CardTitle className="text-2xl font-bold tracking-tight">Ek Bhavishya</CardTitle>
                 <CardDescription>
-                    Enter your credentials to access the admin panel
+                    Enter your credentials to access your dashboard
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -74,7 +84,7 @@ export default function LoginPage() {
                         <Input
                             id="email"
                             type="email"
-                            placeholder="admin@example.com"
+                            placeholder="user@example.com"
                             autoComplete="email"
                             className={errors.email ? 'border-destructive' : ''}
                             {...register('email')}
@@ -134,7 +144,15 @@ export default function LoginPage() {
                     </Button>
                 </form>
             </CardContent>
-            <CardFooter className="justify-center">
+            <CardFooter className="flex-col space-y-4">
+                <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                        Admin user?{' '}
+                        <Link href="/admin-login" className="font-medium text-primary hover:underline">
+                            Login here
+                        </Link>
+                    </p>
+                </div>
                 <p className="text-xs text-muted-foreground">
                     &copy; {new Date().getFullYear()} Ek Bhavishya. All rights reserved.
                 </p>

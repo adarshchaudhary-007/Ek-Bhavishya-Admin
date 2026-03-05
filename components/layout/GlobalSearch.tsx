@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, FileText, Users, Store, Star, BookOpen, Bell, TrendingUp, X, Edit, Trash2, CheckCircle, XCircle, UserX, Ban } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useRouter } from 'next/navigation'
@@ -93,9 +93,17 @@ export function GlobalSearch() {
         setSelectedIndex(0)
     }, [search])
 
+    const handleNavigate = useCallback((path: string) => {
+        setOpen(false)
+        setSearch('')
+        setTimeout(() => {
+            router.push(path)
+        }, 100)
+    }, [router])
+
     // Keyboard navigation
     useEffect(() => {
-        if (!open) return
+        if (!open || results.length === 0) return
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowDown') {
@@ -112,15 +120,7 @@ export function GlobalSearch() {
 
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [open, results, selectedIndex])
-
-    const handleNavigate = (path: string) => {
-        setOpen(false)
-        setSearch('')
-        setTimeout(() => {
-            router.push(path)
-        }, 100)
-    }
+    }, [open, results, selectedIndex, handleNavigate])
 
     return (
         <>
@@ -175,7 +175,7 @@ export function GlobalSearch() {
                                                 {category}
                                             </div>
                                             <div className="space-y-1">
-                                                {categoryResults.map((result, idx) => {
+                                                {categoryResults.map((result) => {
                                                     const Icon = result.icon
                                                     const globalIndex = results.indexOf(result)
                                                     const isSelected = globalIndex === selectedIndex
