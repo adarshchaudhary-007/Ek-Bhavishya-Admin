@@ -174,3 +174,84 @@ export function useRevertSeller() {
         },
     });
 }
+
+
+/**
+ * Hook to update seller details
+ */
+export function useUpdateSeller() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => {
+            console.log('[useUpdateSeller] Updating seller:', id, 'data:', data);
+            return SellerService.updateSeller(id, data);
+        },
+        onSuccess: (data, variables) => {
+            console.log('[useUpdateSeller] Success response:', data);
+            toast.success(data.message || 'Seller updated successfully');
+            
+            // Update cache optimistically
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.sellers.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.map((seller: any) =>
+                            seller._id === variables.id
+                                ? { ...seller, ...variables.data }
+                                : seller
+                        ),
+                    };
+                }
+            );
+            
+            // Invalidate all seller queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.sellers.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useUpdateSeller] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update seller';
+            toast.error(errorMessage);
+        },
+    });
+}
+
+/**
+ * Hook to delete seller
+ */
+export function useDeleteSeller() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => {
+            console.log('[useDeleteSeller] Deleting seller:', id);
+            return SellerService.deleteSeller(id);
+        },
+        onSuccess: (data, sellerId) => {
+            console.log('[useDeleteSeller] Success response:', data);
+            toast.success(data.message || 'Seller deleted successfully');
+            
+            // Remove from cache optimistically
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.sellers.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.filter((seller: any) => seller._id !== sellerId),
+                    };
+                }
+            );
+            
+            // Invalidate all seller queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.sellers.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useDeleteSeller] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to delete seller';
+            toast.error(errorMessage);
+        },
+    });
+}

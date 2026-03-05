@@ -3,7 +3,7 @@
 import { ColumnDef, Row } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle, XCircle } from "lucide-react"
+import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle, XCircle, RotateCcw } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import Link from "next/link"
-import { useApproveCourse, useRejectCourse, useDeleteAdminCourse } from "@/lib/hooks/use-courses"
+import { useApproveCourse, useRejectCourse, useDeleteAdminCourse, useDeleteCourse, useRevertCourseStatus } from "@/lib/hooks/use-courses"
 import { useState } from "react"
 import { CourseDetailModal } from "./course-detail-modal"
 
@@ -41,12 +41,14 @@ const ActionCell = ({ course }: { course: Course }) => {
     const [showDetailModal, setShowDetailModal] = useState(false)
     const [rejectionReason, setRejectionReason] = useState("")
 
-    const { mutate: approveCourse, isPending: isApproving } = useApproveCourse()
-    const { mutate: rejectCourse, isPending: isRejecting } = useRejectCourse()
-    const { mutate: deleteCourse, isPending: isDeleting } = useDeleteAdminCourse()
+    const approveMutation = useApproveCourse()
+    const rejectMutation = useRejectCourse()
+    const deleteAdminMutation = useDeleteAdminCourse()
+    const deleteCourseMutation = useDeleteCourse()
+    const revertMutation = useRevertCourseStatus()
 
     const handleApprove = () => {
-        approveCourse(course._id)
+        approveMutation.mutate(course._id)
     }
 
     const handleReject = () => {
@@ -54,19 +56,32 @@ const ActionCell = ({ course }: { course: Course }) => {
             toast.error("Please provide a rejection reason")
             return
         }
-        rejectCourse({ id: course._id, rejectionReason })
+        rejectMutation.mutate({ id: course._id, rejectionReason })
         setShowRejectModal(false)
         setRejectionReason("")
     }
 
     const handleDelete = () => {
         if (confirm("Are you sure you want to delete this course?")) {
-            deleteCourse(course._id)
+            if (isAdminCoursesPage) {
+                deleteAdminMutation.mutate(course._id)
+            } else {
+                deleteCourseMutation.mutate(course._id)
+            }
         }
     }
 
-    const isLoading = isApproving || isRejecting || isDeleting
+    const handleRevert = () => {
+        if (confirm("Are you sure you want to revert the status of this course?")) {
+            revertMutation.mutate(course._id)
+        }
+    }
+
+    const isLoading = approveMutation.isPending || rejectMutation.isPending || deleteAdminMutation.isPending || deleteCourseMutation.isPending || revertMutation.isPending
     const isPending = course.status === 'pending' || course.status === 'Pending'
+    const isApproved = course.status === 'active' || course.status === 'Approved' || course.status === 'Active'
+    const isRejected = course.status === 'rejected' || course.status === 'Rejected'
+    const canRevert = isApproved || isRejected
     const isAdminCoursesPage = pathname.includes('/admin/admin-courses')
 
     return (
@@ -108,6 +123,15 @@ const ActionCell = ({ course }: { course: Course }) => {
                                 <XCircle className="mr-2 h-4 w-4" /> Reject Course
                             </DropdownMenuItem>
                         </>
+                    )}
+                    {canRevert && (
+                        <DropdownMenuItem
+                            className="text-blue-600 cursor-pointer font-medium"
+                            disabled={isLoading}
+                            onClick={handleRevert}
+                        >
+                            <RotateCcw className="mr-2 h-4 w-4" /> Revert Status
+                        </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -154,9 +178,9 @@ const ActionCell = ({ course }: { course: Course }) => {
                             <Button
                                 variant="destructive"
                                 onClick={handleReject}
-                                disabled={isRejecting}
+                                disabled={isLoading}
                             >
-                                {isRejecting ? "Rejecting..." : "Reject"}
+                                Reject
                             </Button>
                         </div>
                     </div>

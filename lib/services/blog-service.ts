@@ -90,4 +90,34 @@ export const BlogService = {
         
         throw new Error('Invalid status for reversion');
     },
+
+    /**
+     * Delete a blog
+     */
+    async deleteBlog(id: string): Promise<OperationResponse> {
+        console.log('[BlogService] Deleting blog:', id);
+        const response = await api.delete(`/api/v1/admin/blogs/${id}`);
+        console.log('[BlogService] deleteBlog response:', response.data);
+        return response.data;
+    },
+
+    /**
+     * Update a blog
+     */
+    async updateBlog(id: string, data: any): Promise<OperationResponse> {
+        console.log('[BlogService] Updating blog:', id, 'Data:', data);
+        const response = await api.patch(`/api/v1/admin/blogs/${id}`, data);
+        console.log('[BlogService] updateBlog response:', response.data);
+        return response.data;
+    },
+
+    /**
+     * Create a blog
+     */
+    async createBlog(data: any): Promise<OperationResponse> {
+        console.log('[BlogService] Creating blog:', data);
+        const response = await api.post('/api/v1/admin/blogs', data);
+        console.log('[BlogService] createBlog response:', response.data);
+        return response.data;
+    },
 };

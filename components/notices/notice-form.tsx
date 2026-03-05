@@ -41,14 +41,18 @@ import { useEffect, useState } from "react"
 import api from "@/lib/axios"
 import { toast } from "sonner"
 import { UserSearchInput } from "./user-search-input"
+import { AstrologerSearchInput } from "./astrologer-search-input"
 import { PlatformUser } from "@/types"
 
 const noticeSchema = z.object({
     title: z.string().min(2, "Title is required"),
     message: z.string().min(10, "Message is required"),
     type: z.enum(["platform_policy", "downtime_alert", "payment_notice", "warning_strike", "appreciation_message"]),
+    recipientType: z.enum(["users", "astrologers", "both"]),
     userSelection: z.enum(["all", "specific"]),
     selectedUsers: z.array(z.string()).optional(),
+    astrologerSelection: z.enum(["all", "specific"]),
+    selectedAstrologers: z.array(z.string()).optional(),
     channels: z.object({
         push: z.boolean(),
         email: z.boolean(),
@@ -67,6 +71,10 @@ export function NoticeForm() {
     const [users, setUsers] = useState<PlatformUser[]>([])
     const [filteredUsers, setFilteredUsers] = useState<PlatformUser[]>([])
     const [loadingUsers, setLoadingUsers] = useState(false)
+    
+    const [astrologers, setAstrologers] = useState<any[]>([])
+    const [filteredAstrologers, setFilteredAstrologers] = useState<any[]>([])
+    const [loadingAstrologers, setLoadingAstrologers] = useState(false)
 
     const form = useForm<NoticeFormValues>({
         resolver: zodResolver(noticeSchema),
@@ -74,8 +82,11 @@ export function NoticeForm() {
             title: "",
             message: "",
             type: "platform_policy",
+            recipientType: "users",
             userSelection: "all",
             selectedUsers: [],
+            astrologerSelection: "all",
+            selectedAstrologers: [],
             channels: {
                 push: false,
                 email: false,
@@ -106,6 +117,24 @@ export function NoticeForm() {
         fetchUsers()
     }, [])
 
+    // Fetch astrologers on mount
+    useEffect(() => {
+        const fetchAstrologers = async () => {
+            setLoadingAstrologers(true)
+            try {
+                const response = await api.get('/api/v1/admin/astrologers')
+                const fetchedAstrologers = response.data.data || []
+                setAstrologers(fetchedAstrologers)
+                setFilteredAstrologers(fetchedAstrologers)
+            } catch (error) {
+                toast.error("Failed to load astrologers")
+            } finally {
+                setLoadingAstrologers(false)
+            }
+        }
+        fetchAstrologers()
+    }, [])
+
     // Load duplicate data from sessionStorage if available
     useEffect(() => {
         const duplicateData = sessionStorage.getItem('duplicateNotice')
@@ -134,15 +163,28 @@ export function NoticeForm() {
     async function onSubmit(data: NoticeFormValues) {
         // Transform form data to API request format
         let user_ids: string[] = [];
+        let astrologer_ids: string[] = [];
 
-        if (data.userSelection === "all") {
-            user_ids = users.map(u => u._id);
-        } else if (data.userSelection === "specific") {
-            user_ids = data.selectedUsers || [];
+        // Handle users
+        if (data.recipientType === "users" || data.recipientType === "both") {
+            if (data.userSelection === "all") {
+                user_ids = users.map(u => u._id);
+            } else if (data.userSelection === "specific") {
+                user_ids = data.selectedUsers || [];
+            }
         }
 
-        if (user_ids.length === 0) {
-            toast.error("Please select at least one user");
+        // Handle astrologers
+        if (data.recipientType === "astrologers" || data.recipientType === "both") {
+            if (data.astrologerSelection === "all") {
+                astrologer_ids = astrologers.map(a => a._id);
+            } else if (data.astrologerSelection === "specific") {
+                astrologer_ids = data.selectedAstrologers || [];
+            }
+        }
+
+        if (user_ids.length === 0 && astrologer_ids.length === 0) {
+            toast.error("Please select at least one recipient");
             return;
         }
 
@@ -157,11 +199,14 @@ export function NoticeForm() {
             message: data.message,
             type: data.type,
             user_ids: user_ids,
+            astrologer_ids: astrologer_ids,
             email_notification: data.channels.email,
             push_notification: data.channels.push,
             in_app_notification: data.channels.inApp,
             schedule_send: combinedDateTime ? combinedDateTime.toISOString() : null,
         }
+
+        console.log('[NoticeForm] Sending notice:', requestData)
 
         createNotice(requestData, {
             onSuccess: () => {
@@ -236,10 +281,10 @@ export function NoticeForm() {
 
                 <FormField
                     control={form.control}
-                    name="userSelection"
+                    name="recipientType"
                     render={({ field }) => (
                         <FormItem className="space-y-3">
-                            <FormLabel>Target Users</FormLabel>
+                            <FormLabel>Send To</FormLabel>
                             <FormControl>
                                 <RadioGroup
                                     onValueChange={field.onChange}
@@ -247,15 +292,21 @@ export function NoticeForm() {
                                     className="flex flex-col space-y-2"
                                 >
                                     <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="all" id="all" />
-                                        <Label htmlFor="all" className="font-normal cursor-pointer">
-                                            Send to all users
+                                        <RadioGroupItem value="users" id="users" />
+                                        <Label htmlFor="users" className="font-normal cursor-pointer">
+                                            Users only
                                         </Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="specific" id="specific" />
-                                        <Label htmlFor="specific" className="font-normal cursor-pointer">
-                                            Send to specific users
+                                        <RadioGroupItem value="astrologers" id="astrologers" />
+                                        <Label htmlFor="astrologers" className="font-normal cursor-pointer">
+                                            Astrologers only
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="both" id="both" />
+                                        <Label htmlFor="both" className="font-normal cursor-pointer">
+                                            Both Users and Astrologers
                                         </Label>
                                     </div>
                                 </RadioGroup>
@@ -265,7 +316,40 @@ export function NoticeForm() {
                     )}
                 />
 
-                {form.watch("userSelection") === "specific" && (
+                {(form.watch("recipientType") === "users" || form.watch("recipientType") === "both") && (
+                    <FormField
+                        control={form.control}
+                        name="userSelection"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormLabel>Target Users</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="flex flex-col space-y-2"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="all" id="all-users" />
+                                            <Label htmlFor="all-users" className="font-normal cursor-pointer">
+                                                Send to all users
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="specific" id="specific-users" />
+                                            <Label htmlFor="specific-users" className="font-normal cursor-pointer">
+                                                Send to specific users
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                {(form.watch("recipientType") === "users" || form.watch("recipientType") === "both") && form.watch("userSelection") === "specific" && (
                     <FormField
                         control={form.control}
                         name="selectedUsers"
@@ -327,6 +411,108 @@ export function NoticeForm() {
                                 </div>
                                 <FormDescription>
                                     {field.value?.length || 0} user(s) selected
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                {(form.watch("recipientType") === "astrologers" || form.watch("recipientType") === "both") && (
+                    <FormField
+                        control={form.control}
+                        name="astrologerSelection"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormLabel>Target Astrologers</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="flex flex-col space-y-2"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="all" id="all-astrologers" />
+                                            <Label htmlFor="all-astrologers" className="font-normal cursor-pointer">
+                                                Send to all astrologers
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="specific" id="specific-astrologers" />
+                                            <Label htmlFor="specific-astrologers" className="font-normal cursor-pointer">
+                                                Send to specific astrologers
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                {(form.watch("recipientType") === "astrologers" || form.watch("recipientType") === "both") && form.watch("astrologerSelection") === "specific" && (
+                    <FormField
+                        control={form.control}
+                        name="selectedAstrologers"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Select Astrologers</FormLabel>
+                                <div className="space-y-3">
+                                    <AstrologerSearchInput
+                                        astrologers={astrologers}
+                                        onFilteredAstrologersChange={setFilteredAstrologers}
+                                    />
+                                    <div className="border rounded-md p-4 max-h-64 overflow-y-auto space-y-2">
+                                        {loadingAstrologers ? (
+                                            <div className="text-center py-4 text-muted-foreground">Loading astrologers...</div>
+                                        ) : filteredAstrologers.length === 0 ? (
+                                            <div className="text-center py-4 text-muted-foreground">No astrologers found</div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center space-x-2 pb-2 border-b">
+                                                    <Checkbox
+                                                        id="select-all-astrologers"
+                                                        checked={field.value?.length === filteredAstrologers.length && filteredAstrologers.length > 0}
+                                                        onCheckedChange={(checked) => {
+                                                            if (checked) {
+                                                                field.onChange(filteredAstrologers.map(a => a._id))
+                                                            } else {
+                                                                field.onChange([])
+                                                            }
+                                                        }}
+                                                    />
+                                                    <Label htmlFor="select-all-astrologers" className="font-semibold cursor-pointer">
+                                                        Select All ({filteredAstrologers.length} astrologers)
+                                                    </Label>
+                                                </div>
+                                                {filteredAstrologers.map((astrologer) => (
+                                                    <div key={astrologer._id} className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id={`astrologer-${astrologer._id}`}
+                                                            checked={field.value?.includes(astrologer._id)}
+                                                            onCheckedChange={(checked) => {
+                                                                const currentValue = field.value || []
+                                                                const newValue = checked
+                                                                    ? [...currentValue, astrologer._id]
+                                                                    : currentValue.filter((id) => id !== astrologer._id)
+                                                                field.onChange(newValue)
+                                                            }}
+                                                        />
+                                                        <Label htmlFor={`astrologer-${astrologer._id}`} className="font-normal cursor-pointer flex-1">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm">{astrologer.personalDetails?.name || astrologer.personalDetails?.email}</span>
+                                                                <span className="text-xs text-muted-foreground">{astrologer.personalDetails?.email}</span>
+                                                            </div>
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                <FormDescription>
+                                    {field.value?.length || 0} astrologer(s) selected
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>

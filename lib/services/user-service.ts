@@ -29,8 +29,8 @@ export class UserService {
      */
     static async blockUser(userId: string): Promise<OperationResponse> {
         console.log('[UserService] blockUser called with userId:', userId);
-        const response = await api.post<OperationResponse>('/api/v1/admin/users/block', {
-            userId
+        const response = await api.patch<OperationResponse>('/api/v1/admin/users/block', {
+            id: userId
         });
         console.log('[UserService] blockUser response:', response.data);
         return response.data;
@@ -42,10 +42,33 @@ export class UserService {
      */
     static async unblockUser(userId: string): Promise<OperationResponse> {
         console.log('[UserService] unblockUser called with userId:', userId);
-        const response = await api.post<OperationResponse>('/api/v1/admin/users/unblock', {
-            userId
+        const response = await api.patch<OperationResponse>('/api/v1/admin/users/unblock', {
+            id: userId
         });
         console.log('[UserService] unblockUser response:', response.data);
+        return response.data;
+    }
+
+    /**
+     * Update user details
+     * @param userId - The ID of the user to update
+     * @param data - The data to update
+     */
+    static async updateUser(userId: string, data: any): Promise<OperationResponse> {
+        console.log('[UserService] updateUser called with userId:', userId, 'data:', data);
+        const response = await api.patch<OperationResponse>(`/api/v1/admin/users/${userId}`, data);
+        console.log('[UserService] updateUser response:', response.data);
+        return response.data;
+    }
+
+    /**
+     * Delete a user
+     * @param userId - The ID of the user to delete
+     */
+    static async deleteUser(userId: string): Promise<OperationResponse> {
+        console.log('[UserService] deleteUser called with userId:', userId);
+        const response = await api.delete<OperationResponse>(`/api/v1/admin/users/${userId}`);
+        console.log('[UserService] deleteUser response:', response.data);
         return response.data;
     }
 }
@@ -55,4 +78,6 @@ export const {
     getAllUsers,
     blockUser,
     unblockUser,
+    updateUser,
+    deleteUser,
 } = UserService;

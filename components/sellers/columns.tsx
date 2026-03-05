@@ -16,9 +16,11 @@ import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import { RejectModal } from "./reject-modal"
 import { SellerDetailModal } from "./seller-detail-modal"
-import { Eye, CheckCircle, XCircle, RotateCcw } from "lucide-react"
-import { useApproveSeller, useRejectSeller, useRevertSeller } from "@/lib/hooks/use-sellers"
+import { Eye, CheckCircle, XCircle, RotateCcw, Edit, Trash2 } from "lucide-react"
+import { useApproveSeller, useRejectSeller, useRevertSeller, useUpdateSeller, useDeleteSeller } from "@/lib/hooks/use-sellers"
 import { Seller } from "@/types"
+import { EditSellerModal } from "./edit-seller-modal"
+import { toast } from "sonner"
 
 export const columns: ColumnDef<Seller>[] = [
     {
@@ -109,10 +111,12 @@ export const columns: ColumnDef<Seller>[] = [
 const ActionCell = ({ seller }: { seller: Seller }) => {
     const [openReject, setOpenReject] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     const approveMutation = useApproveSeller();
     const rejectMutation = useRejectSeller();
     const revertMutation = useRevertSeller();
+    const deleteMutation = useDeleteSeller();
 
     const handleApprove = () => {
         approveMutation.mutate(seller._id);
@@ -127,7 +131,13 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
         revertMutation.mutate(seller._id);
     };
 
-    const isLoading = approveMutation.isPending || rejectMutation.isPending || revertMutation.isPending;
+    const handleDelete = () => {
+        if (confirm(`Are you sure you want to delete ${seller.fullname}?`)) {
+            deleteMutation.mutate(seller._id);
+        }
+    };
+
+    const isLoading = approveMutation.isPending || rejectMutation.isPending || revertMutation.isPending || deleteMutation.isPending;
     const isApproved = seller.is_approved && seller.status === "Active";
     const isRejected = seller.status === "Blocked";
     const isPending = !seller.is_approved && seller.status === "Inactive";
@@ -145,6 +155,9 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetails(true)}>
                         <Eye className="mr-2 h-4 w-4" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowEditModal(true)}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit Seller
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
 
@@ -176,6 +189,16 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
                             <RotateCcw className="mr-2 h-4 w-4" /> Revert Status
                         </DropdownMenuItem>
                     )}
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                        className="text-destructive cursor-pointer font-medium"
+                        disabled={isLoading}
+                        onClick={handleDelete}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Seller
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -191,6 +214,12 @@ const ActionCell = ({ seller }: { seller: Seller }) => {
                 onConfirm={handleReject}
                 sellerName={seller.fullname}
                 loading={isLoading}
+            />
+
+            <EditSellerModal
+                open={showEditModal}
+                onOpenChange={setShowEditModal}
+                seller={seller}
             />
         </>
     )

@@ -102,6 +102,26 @@ export class SellerService {
         console.log('[SellerService] revertSellerStatus response:', response.data);
         return response.data;
     }
+
+    /**
+     * Update seller details
+     */
+    static async updateSeller(id: string, data: any): Promise<OperationResponse> {
+        console.log('[SellerService] updateSeller called with id:', id, 'data:', data);
+        const response = await api.patch<any>(`/api/v1/admin/sellers/${id}`, data);
+        console.log('[SellerService] updateSeller response:', response.data);
+        return response.data;
+    }
+
+    /**
+     * Delete seller
+     */
+    static async deleteSeller(id: string): Promise<OperationResponse> {
+        console.log('[SellerService] deleteSeller called with id:', id);
+        const response = await api.delete<any>(`/api/v1/admin/sellers/${id}`);
+        console.log('[SellerService] deleteSeller response:', response.data);
+        return response.data;
+    }
 }
 
 // Export individual functions for easier importing
@@ -111,4 +131,6 @@ export const {
     approveSeller,
     rejectSeller,
     revertSellerStatus,
+    updateSeller,
+    deleteSeller,
 } = SellerService;

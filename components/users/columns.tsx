@@ -39,34 +39,31 @@ export type User = {
 }
 
 import { Eye, Edit, Trash2, ShieldAlert } from "lucide-react"
-import { useBlockUser } from "@/lib/hooks/use-users"
+import { useBlockUser, useDeleteUser } from "@/lib/hooks/use-users"
 import { BlockUserModal } from "./block-user-modal"
+import { EditUserModal } from "./edit-user-modal"
 
 const UserActions = ({ user }: { user: User }) => {
     const queryClient = useQueryClient()
     const [showDetails, setShowDetails] = React.useState(false)
     const [showBlockConfirm, setShowBlockConfirm] = React.useState(false)
+    const [showEditModal, setShowEditModal] = React.useState(false)
 
     const blockUserMutation = useBlockUser()
+    const deleteUserMutation = useDeleteUser()
 
     const handleBlockUser = () => {
         blockUserMutation.mutate(user._id)
         setShowBlockConfirm(false)
     }
 
-    const { mutate: deleteUser, isPending: isDeleting } = useMutation({
-        mutationFn: async () => {
-            await api.delete(`/api/v1/admin/users/${user._id}`);
-        },
-        onSuccess: () => {
-            toast.success("User deleted successfully");
-            queryClient.invalidateQueries({ queryKey: ["users"] });
-        },
-        onError: (error: Error) => {
-            const message = (error as any).response?.data?.message || "Deletion failed";
-            toast.error(message);
+    const handleDeleteUser = () => {
+        if (confirm(`Are you sure you want to delete ${user.fullName || user.email}?`)) {
+            deleteUserMutation.mutate(user._id)
         }
-    })
+    }
+
+    const isLoading = blockUserMutation.isPending || deleteUserMutation.isPending
 
     return (
         <>
@@ -82,7 +79,7 @@ const UserActions = ({ user }: { user: User }) => {
                     <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetails(true)}>
                         <Eye className="mr-2 h-4 w-4" /> View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Edit functionality coming soon")}>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowEditModal(true)}>
                         <Edit className="mr-2 h-4 w-4" /> Edit User
                     </DropdownMenuItem>
 
@@ -90,7 +87,7 @@ const UserActions = ({ user }: { user: User }) => {
 
                     <DropdownMenuItem
                         className="text-destructive cursor-pointer font-medium"
-                        disabled={blockUserMutation.isPending}
+                        disabled={isLoading}
                         onClick={() => setShowBlockConfirm(true)}
                     >
                         <ShieldAlert className="mr-2 h-4 w-4" /> Block User
@@ -98,12 +95,8 @@ const UserActions = ({ user }: { user: User }) => {
 
                     <DropdownMenuItem
                         className="text-destructive cursor-pointer font-medium"
-                        disabled={isDeleting}
-                        onClick={() => {
-                            if (confirm(`Are you sure you want to delete ${user.fullName || user.email}?`)) {
-                                deleteUser();
-                            }
-                        }}
+                        disabled={isLoading}
+                        onClick={handleDeleteUser}
                     >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete User
                     </DropdownMenuItem>
@@ -122,6 +115,12 @@ const UserActions = ({ user }: { user: User }) => {
                 onConfirm={handleBlockUser}
                 userName={user.fullName || user.email}
                 loading={blockUserMutation.isPending}
+            />
+
+            <EditUserModal
+                open={showEditModal}
+                onOpenChange={setShowEditModal}
+                user={user}
             />
         </>
     )

@@ -14,12 +14,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
-import { Eye, CheckCircle, XCircle, RotateCcw } from "lucide-react"
-import { useApproveBlog, useRejectBlog, useRevertBlogStatus } from "@/lib/hooks/use-blogs"
+import { Eye, CheckCircle, XCircle, RotateCcw, Trash2, Edit } from "lucide-react"
+import { useApproveBlog, useRejectBlog, useRevertBlogStatus, useDeleteBlog } from "@/lib/hooks/use-blogs"
 import { Blog } from "@/types"
 import { BlogDetailModal } from "./blog-detail-modal"
 import { RejectBlogModal } from "./reject-blog-modal"
 import { RevertBlogModal } from "./revert-blog-modal"
+import { EditBlogModal } from "./edit-blog-modal"
 
 export const columns: ColumnDef<Blog>[] = [
     {
@@ -27,11 +28,12 @@ export const columns: ColumnDef<Blog>[] = [
         header: "Title",
         cell: ({ row }: { row: Row<Blog> }) => {
             const blog = row.original
+            const authorName = blog.author?.personalDetails?.name || blog.author?.name || 'Unknown Author'
             return (
                 <div className="max-w-[300px]">
                     <p className="font-medium truncate" title={blog.title}>{blog.title}</p>
-                    <p className="text-xs text-gray-500 truncate" title={blog.author.personalDetails.name}>
-                        By {blog.author.personalDetails.name}
+                    <p className="text-xs text-gray-500 truncate" title={authorName}>
+                        By {authorName}
                     </p>
                 </div>
             )
@@ -41,8 +43,8 @@ export const columns: ColumnDef<Blog>[] = [
         accessorKey: "author.personalDetails.email",
         header: "Author Email",
         cell: ({ row }: { row: Row<Blog> }) => {
-            const email = row.original.author.personalDetails.email
-            return <span className="text-sm">{email || "N/A"}</span>
+            const email = row.original.author?.personalDetails?.email || row.original.author?.email || "N/A"
+            return <span className="text-sm">{email}</span>
         }
     },
     {
@@ -85,10 +87,12 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
     const [showDetails, setShowDetails] = useState(false)
     const [showRejectModal, setShowRejectModal] = useState(false)
     const [showRevertModal, setShowRevertModal] = useState(false)
+    const [showEditModal, setShowEditModal] = useState(false)
     
     const approveMutation = useApproveBlog()
     const rejectMutation = useRejectBlog()
     const revertMutation = useRevertBlogStatus()
+    const deleteMutation = useDeleteBlog()
 
     const handleApprove = () => {
         approveMutation.mutate(blog._id)
@@ -108,7 +112,13 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
         setShowRevertModal(false)
     }
 
-    const isLoading = approveMutation.isPending || rejectMutation.isPending || revertMutation.isPending
+    const handleDelete = () => {
+        if (confirm(`Are you sure you want to delete "${blog.title}"? This action cannot be undone.`)) {
+            deleteMutation.mutate(blog._id)
+        }
+    }
+
+    const isLoading = approveMutation.isPending || rejectMutation.isPending || revertMutation.isPending || deleteMutation.isPending
     const isPending = blog.status === "Pending"
     const canRevert = blog.status === "Approved" || blog.status === "Rejected"
 
@@ -125,6 +135,9 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetails(true)}>
                         <Eye className="mr-2 h-4 w-4" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowEditModal(true)}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit Blog
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     
@@ -156,6 +169,16 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
                             <RotateCcw className="mr-2 h-4 w-4" /> Revert Status
                         </DropdownMenuItem>
                     )}
+
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem
+                        className="text-destructive cursor-pointer font-medium"
+                        onClick={handleDelete}
+                        disabled={isLoading}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Blog
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -180,6 +203,12 @@ const ActionCell = ({ blog }: { blog: Blog }) => {
                 blogTitle={blog.title}
                 currentStatus={blog.status as 'Approved' | 'Rejected'}
                 loading={isLoading}
+            />
+
+            <EditBlogModal
+                open={showEditModal}
+                onOpenChange={setShowEditModal}
+                blog={blog}
             />
         </>
     )

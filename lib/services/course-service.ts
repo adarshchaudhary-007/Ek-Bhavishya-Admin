@@ -20,7 +20,7 @@ export interface CourseSearchParams extends PaginationParams {
 export class CourseService {
     /**
      * Get all courses with optional search and pagination
-     * Endpoint: GET /api/v1/admin/courses?search=
+     * Endpoint: GET /api/v1/admin/courses
      */
     static async getAllCourses(params?: CourseSearchParams): Promise<CoursesResponse> {
         console.log('[CourseService] getAllCourses called with params:', params);
@@ -31,23 +31,22 @@ export class CourseService {
 
     /**
      * Approve a course
+     * Endpoint: PATCH /api/v1/admin/courses/:id/approve
      */
     static async approveCourse(id: string): Promise<OperationResponse> {
         console.log('[CourseService] approveCourse called with id:', id);
-        const response = await api.patch<OperationResponse>('/api/v1/admin/courses/approve', {
-            id
-        });
+        const response = await api.patch<OperationResponse>(`/api/v1/admin/courses/${id}/approve`);
         console.log('[CourseService] approveCourse response:', response.data);
         return response.data;
     }
 
     /**
      * Reject a course
+     * Endpoint: PATCH /api/v1/admin/courses/:id/reject
      */
     static async rejectCourse(id: string, rejectionReason: string): Promise<OperationResponse> {
         console.log('[CourseService] rejectCourse called with id:', id);
-        const response = await api.patch<OperationResponse>('/api/v1/admin/courses/reject', {
-            id,
+        const response = await api.patch<OperationResponse>(`/api/v1/admin/courses/${id}/reject`, {
             rejectionReason
         });
         console.log('[CourseService] rejectCourse response:', response.data);
@@ -72,10 +71,11 @@ export class CourseService {
 
     /**
      * Get all admin courses with pagination
+     * Endpoint: GET /api/v1/admin/courses/admin-courses/list
      */
     static async getAdminCourses(params?: PaginationParams): Promise<CoursesResponse> {
         console.log('[CourseService] getAdminCourses called with params:', params);
-        const response = await api.get<CoursesResponse>('/api/v1/admin/courses/admin-courses', { params });
+        const response = await api.get<CoursesResponse>('/api/v1/admin/courses/admin-courses/list', { params });
         console.log('[CourseService] getAdminCourses response:', response.data);
         return response.data;
     }
@@ -123,6 +123,26 @@ export class CourseService {
         console.log('[CourseService] deleteAdminCourse response:', response.data);
         return response.data;
     }
+
+    /**
+     * Delete course (seller course)
+     */
+    static async deleteCourse(id: string): Promise<OperationResponse> {
+        console.log('[CourseService] deleteCourse called with id:', id);
+        const response = await api.delete<OperationResponse>(`/api/v1/admin/courses/${id}`);
+        console.log('[CourseService] deleteCourse response:', response.data);
+        return response.data;
+    }
+
+    /**
+     * Revert course status
+     */
+    static async revertCourseStatus(id: string): Promise<OperationResponse> {
+        console.log('[CourseService] revertCourseStatus called with id:', id);
+        const response = await api.patch<OperationResponse>(`/api/v1/admin/courses/${id}/revert`);
+        console.log('[CourseService] revertCourseStatus response:', response.data);
+        return response.data;
+    }
 }
 
 // Export individual functions for easier importing
@@ -135,4 +155,6 @@ export const {
     getAdminCourseById,
     updateAdminCourse,
     deleteAdminCourse,
+    deleteCourse,
+    revertCourseStatus,
 } = CourseService;

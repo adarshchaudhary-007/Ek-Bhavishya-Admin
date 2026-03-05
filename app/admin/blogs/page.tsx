@@ -4,7 +4,7 @@ import { columns } from '@/components/blogs/columns';
 import { DataTable } from '@/components/ui/data-table';
 import { useBlogs } from '@/lib/hooks/use-blogs';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Plus } from 'lucide-react';
 import { useState } from 'react';
 import {
     Select,
@@ -13,9 +13,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { CreateBlogModal } from '@/components/blogs/create-blog-modal';
 
 export default function BlogsPage() {
     const [status, setStatus] = useState<'Pending' | 'Approved' | 'Rejected' | ''>('');
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     const {
         data,
@@ -69,15 +71,24 @@ export default function BlogsPage() {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight">Blogs</h2>
-                <Button
-                    onClick={handleRefresh}
-                    variant="outline"
-                    size="sm"
-                    disabled={isFetching}
-                >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-                    Refresh
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        onClick={() => setShowCreateModal(true)}
+                        size="sm"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Blog
+                    </Button>
+                    <Button
+                        onClick={handleRefresh}
+                        variant="outline"
+                        size="sm"
+                        disabled={isFetching}
+                    >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                </div>
             </div>
 
             <div className="flex items-center gap-4">
@@ -105,6 +116,11 @@ export default function BlogsPage() {
                     searchKey="title"
                 />
             )}
+
+            <CreateBlogModal
+                open={showCreateModal}
+                onOpenChange={setShowCreateModal}
+            />
         </div>
     );
 }

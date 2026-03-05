@@ -109,3 +109,83 @@ export function useUnsuspendAstrologer() {
         },
     });
 }
+
+/**
+ * Hook to delete an astrologer
+ */
+export function useDeleteAstrologer() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => {
+            console.log('[useDeleteAstrologer] Deleting astrologer:', id);
+            return AstrologerService.deleteAstrologer(id);
+        },
+        onSuccess: (data, id) => {
+            console.log('[useDeleteAstrologer] Success response:', data);
+            toast.success(data.message || 'Astrologer deleted successfully');
+
+            // Remove from cache optimistically
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.astrologers.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.filter((astrologer: any) => astrologer._id !== id),
+                    };
+                }
+            );
+
+            // Invalidate all astrologer queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.astrologers.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useDeleteAstrologer] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to delete astrologer';
+            toast.error(errorMessage);
+        },
+    });
+}
+
+/**
+ * Hook to update an astrologer
+ */
+export function useUpdateAstrologer() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => {
+            console.log('[useUpdateAstrologer] Updating astrologer:', id, 'data:', data);
+            return AstrologerService.updateAstrologer(id, data);
+        },
+        onSuccess: (data, variables) => {
+            console.log('[useUpdateAstrologer] Success response:', data);
+            toast.success(data.message || 'Astrologer updated successfully');
+
+            // Update cache optimistically
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.astrologers.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.map((astrologer: any) =>
+                            astrologer._id === variables.id
+                                ? { ...astrologer, ...variables.data }
+                                : astrologer
+                        ),
+                    };
+                }
+            );
+
+            // Invalidate all astrologer queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.astrologers.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useUpdateAstrologer] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update astrologer';
+            toast.error(errorMessage);
+        },
+    });
+}

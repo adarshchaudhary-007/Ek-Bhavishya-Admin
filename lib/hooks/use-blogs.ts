@@ -151,3 +151,109 @@ export function useRevertBlogStatus() {
         },
     });
 }
+
+/**
+ * Hook to delete a blog
+ */
+export function useDeleteBlog() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (blogId: string) => {
+            console.log('[useDeleteBlog] Deleting blog:', blogId);
+            return BlogService.deleteBlog(blogId);
+        },
+        onSuccess: (data, blogId) => {
+            console.log('[useDeleteBlog] Success response:', data);
+            toast.success(data.message || 'Blog deleted successfully');
+
+            // Remove from cache optimistically
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.blogs.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.filter((blog: any) => blog._id !== blogId),
+                    };
+                }
+            );
+
+            // Invalidate all blog queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useDeleteBlog] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to delete blog';
+            toast.error(errorMessage);
+        },
+    });
+}
+
+/**
+ * Hook to update a blog
+ */
+export function useUpdateBlog() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ blogId, data }: { blogId: string; data: any }) => {
+            console.log('[useUpdateBlog] Updating blog:', blogId, 'Data:', data);
+            return BlogService.updateBlog(blogId, data);
+        },
+        onSuccess: (data, variables) => {
+            console.log('[useUpdateBlog] Success response:', data);
+            toast.success(data.message || 'Blog updated successfully');
+
+            // Update cache optimistically
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.blogs.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.map((blog: any) =>
+                            blog._id === variables.blogId
+                                ? { ...blog, ...variables.data }
+                                : blog
+                        ),
+                    };
+                }
+            );
+
+            // Invalidate all blog queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useUpdateBlog] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update blog';
+            toast.error(errorMessage);
+        },
+    });
+}
+
+/**
+ * Hook to create a blog
+ */
+export function useCreateBlog() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: any) => {
+            console.log('[useCreateBlog] Creating blog:', data);
+            return BlogService.createBlog(data);
+        },
+        onSuccess: (data) => {
+            console.log('[useCreateBlog] Success response:', data);
+            toast.success(data.message || 'Blog created successfully');
+
+            // Invalidate all blog queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.blogs.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useCreateBlog] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to create blog';
+            toast.error(errorMessage);
+        },
+    });
+}

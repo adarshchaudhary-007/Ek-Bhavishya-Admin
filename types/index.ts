@@ -219,6 +219,8 @@ export interface Blog {
             name: string;
             email: string;
         };
+        name?: string;
+        email?: string;
     };
     status: 'Pending' | 'Approved' | 'Rejected';
     rejectionReason?: string;

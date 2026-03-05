@@ -25,21 +25,43 @@ export class AstrologerService {
 
     /**
      * Suspend an astrologer
+     * Endpoint: PATCH /api/v1/admin/astrologers/suspend
      */
     static async suspendAstrologer(data: SuspendAstrologerRequest): Promise<OperationResponse> {
         console.log('[AstrologerService] suspendAstrologer called with data:', data);
-        const response = await api.post<OperationResponse>('/api/v1/admin/astrologers/suspend', data);
+        const response = await api.patch<OperationResponse>('/api/v1/admin/astrologers/suspend', data);
         console.log('[AstrologerService] suspendAstrologer response:', response.data);
         return response.data;
     }
 
     /**
      * Unsuspend an astrologer
+     * Endpoint: PATCH /api/v1/admin/astrologers/unsuspend
      */
     static async unsuspendAstrologer(data: UnsuspendAstrologerRequest): Promise<OperationResponse> {
         console.log('[AstrologerService] unsuspendAstrologer called with data:', data);
-        const response = await api.post<OperationResponse>('/api/v1/admin/astrologers/unsuspend', data);
+        const response = await api.patch<OperationResponse>('/api/v1/admin/astrologers/unsuspend', data);
         console.log('[AstrologerService] unsuspendAstrologer response:', response.data);
+        return response.data;
+    }
+
+    /**
+     * Delete an astrologer
+     */
+    static async deleteAstrologer(id: string): Promise<OperationResponse> {
+        console.log('[AstrologerService] deleteAstrologer called with id:', id);
+        const response = await api.delete<OperationResponse>(`/api/v1/admin/astrologers/${id}`);
+        console.log('[AstrologerService] deleteAstrologer response:', response.data);
+        return response.data;
+    }
+
+    /**
+     * Update astrologer profile
+     */
+    static async updateAstrologer(id: string, data: any): Promise<OperationResponse> {
+        console.log('[AstrologerService] updateAstrologer called with id:', id, 'data:', data);
+        const response = await api.patch<OperationResponse>(`/api/v1/admin/astrologers/${id}`, data);
+        console.log('[AstrologerService] updateAstrologer response:', response.data);
         return response.data;
     }
 }
@@ -49,4 +71,6 @@ export const {
     getAllAstrologers,
     suspendAstrologer,
     unsuspendAstrologer,
+    deleteAstrologer,
+    updateAstrologer,
 } = AstrologerService;

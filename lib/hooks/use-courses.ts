@@ -239,3 +239,67 @@ export function useDeleteAdminCourse() {
         },
     });
 }
+
+/**
+ * Hook to delete a course (seller course)
+ */
+export function useDeleteCourse() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (courseId: string) => {
+            console.log('[useDeleteCourse] Deleting course:', courseId);
+            return CourseService.deleteCourse(courseId);
+        },
+        onSuccess: (data, courseId) => {
+            console.log('[useDeleteCourse] Success response:', data);
+            toast.success(data.message || 'Course deleted successfully');
+
+            // Update cache optimistically
+            queryClient.setQueriesData(
+                { queryKey: queryKeys.courses.lists() },
+                (oldData: any) => {
+                    if (!oldData?.data) return oldData;
+                    return {
+                        ...oldData,
+                        data: oldData.data.filter((course: any) => course._id !== courseId),
+                    };
+                }
+            );
+
+            // Invalidate all course queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.courses.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useDeleteCourse] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to delete course';
+            toast.error(errorMessage);
+        },
+    });
+}
+
+/**
+ * Hook to revert course status
+ */
+export function useRevertCourseStatus() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (courseId: string) => {
+            console.log('[useRevertCourseStatus] Reverting course status:', courseId);
+            return CourseService.revertCourseStatus(courseId);
+        },
+        onSuccess: (data, courseId) => {
+            console.log('[useRevertCourseStatus] Success response:', data);
+            toast.success(data.message || 'Course status reverted successfully');
+
+            // Invalidate all course queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.courses.all, refetchType: 'all' });
+        },
+        onError: (error: any) => {
+            console.error('[useRevertCourseStatus] Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to revert course status';
+            toast.error(errorMessage);
+        },
+    });
+}

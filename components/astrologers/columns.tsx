@@ -20,8 +20,9 @@ import api from "@/lib/axios"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AstrologerDetailModal } from "./astrologer-detail-modal"
 import { Eye, Edit, Trash2, ShieldCheck, ShieldAlert, BadgeIndianRupee, Clock } from "lucide-react"
-import { useUnsuspendAstrologer } from "@/lib/hooks/use-astrologers"
+import { useUnsuspendAstrologer, useDeleteAstrologer } from "@/lib/hooks/use-astrologers"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { EditAstrologerModal } from "./edit-astrologer-modal"
 
 export type Astrologer = {
     _id: string
@@ -175,6 +176,14 @@ export const columns: ColumnDef<Astrologer>[] = [
         },
     },
     {
+        accessorKey: "walletBalance",
+        header: "Wallet",
+        cell: ({ row }: { row: Row<Astrologer> }) => {
+            const balance = row.original.walletBalance || 0
+            return <span className="font-bold text-sm">₹{balance}</span>
+        }
+    },
+    {
         accessorKey: "availability.status",
         header: "Status",
         cell: ({ row }: { row: Row<Astrologer> }) => {
@@ -229,29 +238,24 @@ export const columns: ColumnDef<Astrologer>[] = [
 const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
     const [openSuspend, setOpenSuspend] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
-    const queryClient = useQueryClient();
+    const [showEditModal, setShowEditModal] = useState(false);
 
     const isSuspended = astrologer.availability.status === 'suspended' || !astrologer.isApproved;
 
-    const { mutate: unsuspend, isPending: isUnsuspending } = useUnsuspendAstrologer();
-
-    const { mutate: deleteAstrologer, isPending: isDeleting } = useMutation({
-        mutationFn: async () => {
-            await api.delete(`/astrologers/${astrologer._id}`);
-        },
-        onSuccess: () => {
-            toast.success("Astrologer deleted successfully");
-            queryClient.invalidateQueries({ queryKey: ['astrologers'] });
-        },
-        onError: (error: Error) => {
-            const message = (error as any).response?.data?.message || "Deletion failed";
-            toast.error(message);
-        }
-    });
+    const unsuspendMutation = useUnsuspendAstrologer();
+    const deleteMutation = useDeleteAstrologer();
 
     const handleUnsuspend = () => {
-        unsuspend({ id: astrologer._id });
+        unsuspendMutation.mutate({ id: astrologer._id });
     };
+
+    const handleDelete = () => {
+        if (confirm(`Are you sure you want to delete ${astrologer.personalDetails.name}?`)) {
+            deleteMutation.mutate(astrologer._id);
+        }
+    };
+
+    const isLoading = unsuspendMutation.isPending || deleteMutation.isPending;
 
     return (
         <>
@@ -267,10 +271,7 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
                     <DropdownMenuItem className="cursor-pointer" onClick={() => setShowDetails(true)}>
                         <Eye className="mr-2 h-4 w-4" /> View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Earnings view coming soon")}>
-                        <BadgeIndianRupee className="mr-2 h-4 w-4" /> View Earnings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info("Edit functionality coming soon")}>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => setShowEditModal(true)}>
                         <Edit className="mr-2 h-4 w-4" /> Edit Profile
                     </DropdownMenuItem>
 
@@ -279,11 +280,11 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
                     {isSuspended ? (
                         <DropdownMenuItem
                             className="text-green-600 cursor-pointer font-medium"
-                            disabled={isUnsuspending}
+                            disabled={isLoading}
                             onClick={handleUnsuspend}
                         >
                             <ShieldCheck className="mr-2 h-4 w-4" /> 
-                            {isUnsuspending ? "Unsuspending..." : "Unsuspend"}
+                            Unsuspend
                         </DropdownMenuItem>
                     ) : (
                         <DropdownMenuItem
@@ -296,12 +297,8 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
 
                     <DropdownMenuItem
                         className="text-destructive cursor-pointer font-medium"
-                        disabled={isDeleting}
-                        onClick={() => {
-                            if (confirm(`Are you sure you want to delete ${astrologer.personalDetails.name}?`)) {
-                                deleteAstrologer();
-                            }
-                        }}
+                        disabled={isLoading}
+                        onClick={handleDelete}
                     >
                         <Trash2 className="mr-2 h-4 w-4" /> Delete Account
                     </DropdownMenuItem>
@@ -319,6 +316,12 @@ const ActionCell = ({ astrologer }: { astrologer: Astrologer }) => {
                 onClose={() => setOpenSuspend(false)}
                 astrologerId={astrologer._id}
                 astrologerName={astrologer.personalDetails.name}
+            />
+
+            <EditAstrologerModal
+                open={showEditModal}
+                onOpenChange={setShowEditModal}
+                astrologer={astrologer}
             />
         </>
     )
