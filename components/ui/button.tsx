@@ -19,6 +19,7 @@ const buttonVariants = cva(
                 ghost: "hover:bg-accent hover:text-accent-foreground",
                 link: "text-primary underline-offset-4 hover:underline",
                 glass: "glass text-foreground hover:bg-white/10 border-white/20",
+                success: "bg-emerald-500 text-white hover:bg-emerald-600",
             },
             size: {
                 default: "h-10 px-4 py-2",
@@ -44,7 +45,7 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant, size, asChild = false, loading, children, ...props }, ref) => {
         const Comp = asChild ? Slot : "button"
-        
+
         // When asChild is true, only render children (Slot only accepts single child)
         if (asChild) {
             return (

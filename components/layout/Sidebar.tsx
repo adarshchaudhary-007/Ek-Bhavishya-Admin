@@ -17,6 +17,15 @@ import {
     ChevronLeft,
     ChevronRight,
     FileText,
+    Calendar,
+    Wand2,
+    ShoppingCart,
+    MessageSquare,
+    Radio,
+    Wallet,
+    Shield,
+    Package,
+    IndianRupee,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -27,11 +36,23 @@ const sidebarItems = [
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/astrologers', label: 'Astrologers', icon: Star },
     { href: '/admin/sellers', label: 'Sellers', icon: Store },
+    { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/courses', label: 'Courses', icon: GraduationCap },
     { href: '/admin/admin-courses', label: 'Admin Courses', icon: BookOpen },
+    { href: '/admin/books', label: 'Books', icon: BookOpen },
     { href: '/admin/blogs', label: 'Blogs', icon: FileText },
+    { href: '/admin/remedies', label: 'Remedies', icon: Wand2 },
+    { href: '/admin/reviews', label: 'Reviews', icon: Star },
     { href: '/admin/notices', label: 'Notices', icon: Bell },
     { href: '/admin/calls', label: 'Calls & Reports', icon: Phone },
+    { href: '/admin/chats', label: 'Chat Sessions', icon: MessageSquare },
+    { href: '/admin/live-sessions', label: 'Live Sessions', icon: Radio },
+    { href: '/admin/wallet', label: 'Wallet', icon: Wallet },
+    { href: '/admin/interviews', label: 'Interviews', icon: Calendar },
+    { href: '/admin/moderation', label: 'Moderation', icon: Shield },
+    { href: '/admin/settings', label: 'Commission', icon: IndianRupee },
+    { href: '/admin/profile', label: 'My Profile', icon: Settings },
 ];
 
 interface SidebarProps {

@@ -329,14 +329,43 @@ export interface RejectCourseRequest {
 export interface DashboardStats {
     revenue: number;
     clients: number;
+    clientsGrowth?: number;
     astrologers: number;
+    sellers: number;
     activeSessions: number;
-    monthlyStats?: MonthlyRevenue[];
+    activeSessionsGrowth?: number;
+    newProducts: number;
+    complaintsCount: number;
+    monthlyStats: any[];
+    recentTransactions: Transaction[];
+    approvals: {
+        total_approved: number;
+        details: {
+            blogs: number;
+            remedies: number;
+            courses: number;
+            sellers: number;
+            astrologers: number;
+            products: number;
+        };
+    };
+}
+
+export interface Transaction {
+    id: string;
+    name: string;
+    email: string;
+    amount: number;
+    createdAt: string;
 }
 
 export interface MonthlyRevenue {
     month: string;
     revenue: number;
+    users: number;
+    astrologers: number;
+    sellers: number;
+    products: number;
 }
 
 export interface DashboardStatsResponse {
@@ -349,10 +378,13 @@ export interface ConsultationStats {
     todayConsultations: number;
     averageRating: number;
     completionRate: number;
-    completedConsultations?: number;
-    cancelledConsultations?: number;
-    totalRevenue?: number;
-    averageDuration?: number;
+    growthPercentage: number;
+    channelBreakdown: {
+        chat: number;
+        video: number;
+        call: number;
+    };
+    dailyBreakdown: Array<{ date: string; count: number }>;
 }
 
 export interface ConsultationStatsResponse {
@@ -373,10 +405,20 @@ export interface DateRange {
 export interface RevenueStatsResponse {
     success: boolean;
     data: {
-        totalRevenue: number;
-        periodRevenue: number;
-        growth: number;
-        chartData: RevenueDataPoint[];
+        startDate: string;
+        endDate: string;
+        period: {
+            days: number;
+        };
+        periodStats: {
+            totalRevenue: number;
+            growth: number;
+            growthPercentage?: number; // Added for flexibility in page.tsx
+        };
+        revenueGraph: Array<{ date: string; amount: number }>;
+        totalRevenue?: number; // Keep for compatibility if needed
+        growth?: number;       // Keep for compatibility if needed
+        chartData?: RevenueDataPoint[];
     };
 }
 
@@ -470,6 +512,146 @@ export interface SuspendAstrologerRequest {
 
 export interface UnsuspendAstrologerRequest {
     id: string;
+    admin_notes?: string;
+}
+// Product Types
+export interface Product {
+    _id: string;
+    product_name: string;
+    description: string;
+    base_price: number;
+    selling_price: number;
+    stock_count: number;
+    category_id: {
+        _id: string;
+        name: string;
+    };
+    seller_id: {
+        _id: string;
+        business_name: string;
+        fullname: string;
+        email: string;
+        phone_number: string;
+    };
+    images: string[];
+    status: 'Draft' | 'Published' | 'Out of Stock';
+    is_verified: boolean;
+    is_listed: boolean;
+    rejectionReason?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ProductsResponse {
+    success: boolean;
+    products: Product[];
+    pagination: PaginationInfo;
+}
+
+export interface ProductResponse {
+    success: boolean;
+    product: Product;
+}
+
+// Interview Types
+export type InterviewStatus = 'Pending' | 'Scheduled' | 'Completed' | 'Cancelled' | 'Rejected';
+
+export interface Interview {
+    _id?: string;
+    astrologer_id: string;
+    meeting_time: string;
+    meeting_link: string;
+    meeting_status: InterviewStatus;
+    admin_notes?: string;
+    interview_rating?: number;
+}
+
+export interface InterviewData {
+    _id: string;
+    name: string;
+    email: string;
+    phone: string;
+    registered_on: string;
+    status: InterviewStatus;
+    interview_details: Partial<Interview>;
+}
+
+export interface InterviewsByStatusResponse {
+    success: boolean;
+    count: number;
+    status_type: InterviewStatus;
+    data: InterviewData[];
+}
+
+// Call Monitoring Types
+export interface CallSession {
+    _id: string;
+    userId: {
+        _id: string;
+        name: string;
+        email: string;
+        phone: string;
+    };
+    astrologerId: {
+        _id: string;
+        name: string;
+        email: string;
+        phone: string;
+    };
+    status: 'ringing' | 'connecting' | 'active' | 'ended' | 'rejected' | 'no_answer' | 'cancelled';
+    callType: 'audio' | 'video';
+    billingType: 'minute' | 'fixed';
+    totalAmount: number;
+    duration: number; // in seconds
+    initiatedAt: string;
+    startedAt?: string;
+    endedAt?: string;
+    reportedBy?: {
+        _id: string;
+        name: string;
+        email: string;
+    };
+    reportReason?: string;
+    reportedAt?: string;
+}
+
+export interface CallStatistics {
+    totalCalls: number;
+    activeCalls: number;
+    completedCalls: number;
+    rejectedCalls: number;
+    cancelledCalls: number;
+    reportedCalls: number;
+    acceptanceRate: number;
+    revenue: {
+        total: number;
+        commission: number;
+        astrologerEarnings: number;
+        averagePerCall: number;
+    };
+    averageCallDuration: number;
+    callTypeBreakdown: Array<{ _id: string; count: number }>;
+    billingTypeBreakdown: Array<{ _id: string; count: number }>;
+}
+
+export interface CallStatsResponse {
+    success: boolean;
+    statistics: CallStatistics;
+}
+
+export interface ActiveCallsResponse {
+    success: boolean;
+    count: number;
+    calls: CallSession[];
+}
+
+export interface ReportedCallsResponse {
+    success: boolean;
+    count: number;
+    totalCount: number;
+    page: number;
+    totalPages: number;
+    calls: CallSession[];
 }
 
 // User App Types (frontend user role)

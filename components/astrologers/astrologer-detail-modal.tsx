@@ -30,10 +30,31 @@ import {
     History,
     Calendar,
     Settings2,
-    User
+    User,
+    LinkIcon,
+    AlertTriangle,
+    BadgeCheck,
+    Ban
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import {
+    useScheduleInterview,
+    useRescheduleInterview,
+    useCancelInterview,
+    useCompleteInterview,
+    useRejectInterview
+} from "@/lib/hooks/use-interviews"
+import { useSuspensionHistory, useSuspendForCalls } from "@/lib/hooks/use-calls"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import {
+    useUnsuspendAstrologer
+} from "@/lib/hooks/use-astrologers"
+import { toast } from "sonner"
+import { format } from "date-fns"
 
 interface AstrologerDetailModalProps {
     astrologer: Astrologer | null
@@ -43,6 +64,21 @@ interface AstrologerDetailModalProps {
 
 export function AstrologerDetailModal({ astrologer, isOpen, onClose }: AstrologerDetailModalProps) {
     if (!astrologer) return null
+
+    const unsuspendMutation = useUnsuspendAstrologer();
+
+    const isSuspended = astrologer.availability.status === 'suspended' || !astrologer.isApproved;
+
+    const handleUnsuspend = () => {
+        unsuspendMutation.mutate(
+            { id: astrologer._id },
+            {
+                onSuccess: () => {
+                    onClose(); // Close modal on success to refresh list
+                }
+            }
+        );
+    };
 
     const formatDate = (dateString?: string) => {
         if (!dateString) return "N/A"
@@ -102,7 +138,9 @@ export function AstrologerDetailModal({ astrologer, isOpen, onClose }: Astrologe
                         <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 border-b-2 border-transparent">Profile</TabsTrigger>
                         <TabsTrigger value="pricing" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 border-b-2 border-transparent">Pricing</TabsTrigger>
                         <TabsTrigger value="availability" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 border-b-2 border-transparent">Availability</TabsTrigger>
-                        <TabsTrigger value="system" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 border-b-2 border-transparent">System Status</TabsTrigger>
+                        <TabsTrigger value="interview" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 border-b-2 border-transparent">Interview</TabsTrigger>
+                        <TabsTrigger value="calls" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 border-b-2 border-transparent">Consultations</TabsTrigger>
+                        <TabsTrigger value="system" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 border-b-2 border-transparent">System</TabsTrigger>
                     </TabsList>
 
                     <div className="flex-1 overflow-y-auto p-6">
@@ -233,6 +271,31 @@ export function AstrologerDetailModal({ astrologer, isOpen, onClose }: Astrologe
                                 <DetailItem icon={DollarSign} label="Wallet Balance" value={`₹${astrologer.walletBalance.toLocaleString('en-IN')}`} />
                             </div>
 
+                            {isSuspended && (
+                                <section className="p-4 rounded-lg border border-emerald-200 bg-emerald-50/30">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                                <BadgeCheck className="w-4 h-4" />
+                                                Account Activation
+                                            </h4>
+                                            <p className="text-xs text-emerald-600/70 font-medium italic">
+                                                Re-enable all services for this astrologer.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            variant="success"
+                                            className="font-bold px-6"
+                                            disabled={unsuspendMutation.isPending}
+                                            onClick={handleUnsuspend}
+                                        >
+                                            {unsuspendMutation.isPending ? "Activating..." : "Unsuspend / Approve"}
+                                        </Button>
+                                    </div>
+                                </section>
+                            )}
+
                             <section>
                                 <h4 className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
                                     <Gift className="w-3.5 h-3.5" />
@@ -275,6 +338,14 @@ export function AstrologerDetailModal({ astrologer, isOpen, onClose }: Astrologe
                                     </div>
                                 </section>
                             )}
+                        </TabsContent>
+
+                        <TabsContent value="interview" className="mt-0 space-y-6">
+                            <InterviewTab astrologerId={astrologer._id} />
+                        </TabsContent>
+
+                        <TabsContent value="calls" className="mt-0 space-y-6">
+                            <ConsultationTab astrologerId={astrologer._id} />
                         </TabsContent>
                     </div>
                 </Tabs>
@@ -338,4 +409,177 @@ function StatusToggle({ icon: Icon, label, active }: { icon?: any, label: string
             </Badge>
         </div>
     )
+}
+
+function InterviewTab({ astrologerId }: { astrologerId: string }) {
+    const [meetingTime, setMeetingTime] = useState("");
+    const [meetingLink, setMeetingLink] = useState("");
+
+    const scheduleMutation = useScheduleInterview();
+    const cancelMutation = useCancelInterview();
+    const completeMutation = useCompleteInterview();
+    const rejectMutation = useRejectInterview();
+
+    const handleSchedule = () => {
+        if (!meetingTime || !meetingLink) {
+            toast.error("Please provide both time and link");
+            return;
+        }
+        scheduleMutation.mutate({
+            astrologer_id: astrologerId,
+            meeting_time: meetingTime,
+            meeting_link: meetingLink
+        });
+    };
+
+    const handleCancel = () => {
+        const reason = prompt("Enter cancellation reason:");
+        if (reason !== null) {
+            cancelMutation.mutate({ astrologer_id: astrologerId, reason });
+        }
+    };
+
+    const handleComplete = () => {
+        const ratingStr = prompt("Enter interview rating (1-5):", "5");
+        const admin_notes = prompt("Enter interview notes (optional):");
+        if (ratingStr !== null) {
+            completeMutation.mutate({
+                astrologer_id: astrologerId,
+                rating: parseInt(ratingStr) || 5,
+                admin_notes: admin_notes || undefined
+            });
+        }
+    };
+
+    const handleReject = () => {
+        const remark = prompt("Enter rejection remark:");
+        if (remark !== null) {
+            rejectMutation.mutate({ astrologer_id: astrologerId, remark });
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <section className="p-4 rounded-lg border bg-muted/20">
+                <h4 className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                    <Calendar className="w-4 h-4" />
+                    Schedule Interview
+                </h4>
+                <div className="grid gap-4">
+                    <div className="grid gap-1.5">
+                        <label className="text-[10px] uppercase font-bold text-muted-foreground">Meeting Time</label>
+                        <Input type="datetime-local" value={meetingTime} onChange={(e) => setMeetingTime(e.target.value)} />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <label className="text-[10px] uppercase font-bold text-muted-foreground">Meeting Link</label>
+                        <div className="flex gap-2">
+                            <Input placeholder="https://meet.google.com/..." value={meetingLink} onChange={(e) => setMeetingLink(e.target.value)} />
+                            <Button size="icon" variant="outline" onClick={() => window.open(meetingLink, '_blank')}>
+                                <LinkIcon className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                    <Button
+                        disabled={scheduleMutation.isPending}
+                        onClick={handleSchedule}
+                        className="bg-emerald-600 hover:bg-emerald-700 mt-2"
+                    >
+                        {scheduleMutation.isPending ? "Scheduling..." : "Schedule Meeting"}
+                    </Button>
+                </div>
+            </section>
+
+            <section className="grid grid-cols-2 gap-4">
+                <Button
+                    variant="outline"
+                    disabled={cancelMutation.isPending}
+                    className="border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={handleCancel}
+                >
+                    <Ban className="w-4 h-4 mr-2" /> Cancel
+                </Button>
+                <Button
+                    disabled={completeMutation.isPending}
+                    variant="success"
+                    onClick={handleComplete}
+                >
+                    <BadgeCheck className="w-4 h-4 mr-2" /> Complete
+                </Button>
+            </section>
+
+            <section className="p-4 rounded-lg border border-red-200 bg-red-50/50">
+                <h4 className="text-xs font-bold text-red-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" /> Final Rejection
+                </h4>
+                <p className="text-xs text-muted-foreground mb-3 italic">
+                    Use this button only if the candidate is fundamentally unsuitable.
+                </p>
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    disabled={rejectMutation.isPending}
+                    onClick={handleReject}
+                >
+                    Reject Application
+                </Button>
+            </section>
+        </div>
+    );
+}
+
+function ConsultationTab({ astrologerId }: { astrologerId: string }) {
+    const { data, isLoading } = useSuspensionHistory(astrologerId);
+
+    if (isLoading) return <div className="space-y-4 animate-pulse">
+        <div className="h-20 w-full bg-muted rounded-lg" />
+        <div className="h-40 w-full bg-muted rounded-lg" />
+    </div>;
+
+    const history = data;
+
+    return (
+        <div className="space-y-6">
+            <div className="p-4 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="bg-orange-100 p-2 rounded-full">
+                        <AlertCircle className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-bold text-orange-800">Quality Reports</p>
+                        <p className="text-xs text-orange-700">{history?.reportedCallsCount || 0} issues reported by users</p>
+                    </div>
+                </div>
+                <Badge variant="outline" className="bg-white">{history?.reportedCallsCount} Reports</Badge>
+            </div>
+
+            <section>
+                <h4 className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                    <History className="w-3.5 h-3.5" />
+                    Reported Calls
+                </h4>
+                {history?.reportedCalls && history.reportedCalls.length > 0 ? (
+                    <div className="space-y-3">
+                        {history.reportedCalls.map((call: any, i: number) => (
+                            <div key={i} className="p-3 rounded-lg border text-sm flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold">{call.userId?.name || 'User'}</p>
+                                    <p className="text-xs text-muted-foreground italic">"{call.reportReason}"</p>
+                                </div>
+                                <div className="text-right whitespace-nowrap ml-2">
+                                    <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                                        {call.reportedAt ? format(new Date(call.reportedAt), 'dd MMM') : 'N/A'}
+                                    </Badge>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-6 border rounded-lg border-dashed text-sm text-muted-foreground italic">
+                        Clean history. No issues reported.
+                    </div>
+                )}
+            </section>
+        </div>
+    );
 }

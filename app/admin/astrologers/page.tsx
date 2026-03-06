@@ -7,14 +7,11 @@ import api from '@/lib/axios';
 
 
 
+import { useAstrologers } from '@/lib/hooks/use-astrologers';
+
 export default function AstrologersPage() {
-    const { data, isLoading } = useQuery({
-        queryKey: ['astrologers'],
-        queryFn: async () => {
-            const response = await api.get('/api/v1/admin/astrologers');
-            return response.data.data || [];
-        }
-    });
+    const { data, isLoading } = useAstrologers();
+    const astrologerList = data?.data || [];
 
     return (
         <div className="space-y-4">
@@ -27,7 +24,7 @@ export default function AstrologersPage() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
             ) : (
-                <DataTable columns={columns} data={data || []} searchKey="name" />
+                <DataTable columns={columns} data={astrologerList} searchKey="name" />
             )}
         </div>
     );
