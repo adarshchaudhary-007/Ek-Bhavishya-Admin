@@ -28,6 +28,11 @@ import {
   Moon,
   Sun,
   Bell,
+  Newspaper,
+  Library,
+  Sparkles,
+  BrainCircuit,
+  Star,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
@@ -43,7 +48,14 @@ const navItems = [
   { href: '/calls', label: 'Calls', icon: Phone },
   { href: '/remedies', label: 'Remedies', icon: Heart },
   { href: '/shop', label: 'Shop', icon: ShoppingCart },
+  { href: '/cart', label: 'Cart', icon: ShoppingCart },
   { href: '/wallet', label: 'Wallet', icon: BarChart3 },
+  { href: '/blogs', label: 'Blogs', icon: Newspaper },
+  { href: '/books', label: 'Books', icon: Library },
+  { href: '/my-books', label: 'My Books', icon: BookOpen },
+  { href: '/horoscope', label: 'Horoscope', icon: Sparkles },
+  { href: '/kundali', label: 'Kundali', icon: Star },
+  { href: '/ai-astrologer', label: 'AI Astrologer', icon: BrainCircuit },
   { href: '/notifications', label: 'Notifications', icon: Bell },
 ];
 

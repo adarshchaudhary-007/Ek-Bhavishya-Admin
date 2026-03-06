@@ -475,33 +475,147 @@ export interface UnsuspendAstrologerRequest {
 // User App Types (frontend user role)
 export interface UserAstrologer {
     _id: string;
-    name: string;
-    expertise: string[];
-    rating: number;
-    pricePerMinute: number;
-    isAvailable: boolean;
+    personalDetails: {
+        profileImage?: string;
+        gender?: string;
+        dob?: string;
+        experience?: number;
+        languages?: string[];
+        skills?: string[];
+        pseudonym?: string;
+        about?: string;
+    };
+    systemStatus: {
+        isLive: boolean;
+        isOnline: boolean;
+    };
+    ratings: {
+        average: number;
+        count: number;
+        negativeReviewsCount?: number;
+    };
+    pricing: {
+        call: number;
+        chat: number;
+        video: number;
+    };
+    availability: {
+        isChatAvailable: boolean;
+        isCallAvailable: boolean;
+        isVideoAvailable: boolean;
+        currentStatus: string;
+        status?: string;
+    };
+    callSettings?: {
+        audioCallRate?: number;
+        videoCallRate?: number;
+        acceptAudioCalls?: boolean;
+        acceptVideoCalls?: boolean;
+    };
+    verificationStatus?: string;
+    isApproved?: boolean;
+    isExclusive?: boolean;
+    status?: string;
 }
 
 export interface UserCourse {
     _id: string;
     title: string;
     description: string;
-    instructor: string;
+    instructor?: string;
+    astrologer?: { name?: string } | string | null;
+    createdByAdmin?: string;
+    courseType?: 'live' | 'recorded';
     duration?: string;
     price: number;
-    rating: number;
-    students: number;
+    isFree?: boolean;
+    rating?: number;
+    totalRatings?: number;
+    totalEnrollments?: number;
+    students?: number;
     thumbnail?: string;
+    status?: string;
+    level?: string;
+    category?: string;
+    modules?: { title: string; videoUrl?: string; description?: string; duration?: number; _id?: string }[];
+    liveSchedule?: {
+        startDate?: string;
+        endDate?: string;
+        startTime?: string;
+        daysOfWeek?: string[];
+        durationMinutes?: number;
+        timezone?: string;
+        frequency?: string;
+    };
+    isFeatured?: boolean;
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface UserRemedy {
     _id: string;
-    name: string;
-    category: string;
+    title: string;
     description: string;
-    price: number;
-    astrologer: string;
-    likes: number;
+    category: string;
+    image?: string;
+    base_price: number;
+    duration_minutes?: number;
+    specializations?: Array<{
+        _id?: string;
+        name: string;
+        price: number;
+        duration_minutes?: number;
+        description?: string;
+    }>;
+    delivery_type?: 'live_video' | 'consultation' | 'report';
+    tags?: string[];
+    is_featured?: boolean;
+    author?: {
+        _id: string;
+        fullName: string;
+        profileImage?: string;
+    };
+}
+
+export interface AstrologerRemedyService {
+    _id: string;
+    astrologer_id: {
+        _id: string;
+        personalDetails: {
+            name: string;
+            profileImage?: string;
+            experience?: {
+                years_experience?: number;
+            };
+        };
+        systemStatus?: {
+            isOnline?: boolean;
+        };
+    };
+    remedy_id: string;
+    status: string;
+    custom_pricing?: {
+        my_price?: number;
+    };
+    metrics?: {
+        average_rating?: number;
+        total_reviews?: number;
+    };
+    availability?: {
+        is_active?: boolean;
+    };
+}
+
+export interface RemedyAstrologersResponse {
+    astrologers: AstrologerRemedyService[];
+    remedy: UserRemedy;
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
 }
 
 export interface WalletSummary {
@@ -520,21 +634,25 @@ export interface WalletTransaction {
     status: string;
 }
 
-export interface ChatConversation {
-    _id: string;
-    participantName: string;
-    participantAvatar?: string;
-    lastMessage: string;
-    lastMessageTime: string;
-    unreadCount: number;
-}
-
 export interface ChatMessage {
     _id: string;
-    conversationId: string;
+    senderId: string;
+    senderType: 'user' | 'astrologer';
     content: string;
-    sender: string;
+    timestamp: string;
+    status: string;
+}
+
+export interface ChatConversation {
+    _id: string;
+    userId: string;
+    astrologerId: string | null;
+    status: string;
+    messages: ChatMessage[];
+    unreadCount: { user: number; astrologer: number };
+    lastMessageAt: string;
     createdAt: string;
+    updatedAt: string;
 }
 
 export interface UserListResponse<T> {

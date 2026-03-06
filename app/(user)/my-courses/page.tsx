@@ -1,7 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, Clock, User, Play, Award, MoreVertical, Star } from 'lucide-react';
+import { useState } from 'react';
 
 export default function MyCoursesPage() {
   const courses = [
@@ -11,11 +15,60 @@ export default function MyCoursesPage() {
       instructor: 'Dr. Rajesh Kumar',
       progress: 45,
       nextLesson: 'Chapter 3: Planetary Positions',
+      completedLessons: 5,
+      duration: '20',
     },
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <BookOpen className="w-8 h-8 text-emerald-600" />
+            <h1 className="text-3xl font-bold text-gray-900">My Courses</h1>
+          </div>
+          <p className="text-gray-600">Track your learning progress and continue where you left off</p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-l-4 border-l-emerald-600">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">Courses Enrolled</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-emerald-600">{courses.length}</p>
+              <p className="text-xs text-gray-500 mt-1">Active courses</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-blue-600">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">Completed Lessons</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-600">
+                {courses.reduce((sum, c) => sum + c.completedLessons, 0)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Total lessons done</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-600">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">Learning Hours</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-purple-600">
+                {courses.reduce((sum, c) => sum + Math.floor((c.progress / 100) * parseInt(c.duration)), 0)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Total hours spent</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Courses List */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
           My Courses

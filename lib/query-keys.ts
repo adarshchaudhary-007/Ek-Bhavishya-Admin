@@ -100,8 +100,14 @@ export const queryKeys = {
     userApp: {
         all: ['user-app'] as const,
         astrologers: () => ['user-app', 'astrologers'] as const,
+        astrologerProfile: (id: string) => ['user-app', 'astrologer', id] as const,
         courses: () => ['user-app', 'courses'] as const,
-        remedies: () => ['user-app', 'remedies'] as const,
+        enrolledCourses: () => ['user-app', 'enrolled-courses'] as const,
+        remedies: (category?: string) => ['user-app', 'remedies', category] as const,
+        remedyDetail: (id: string) => ['user-app', 'remedy', id] as const,
+        remedyCategories: () => ['user-app', 'remedy-categories'] as const,
+        remedyAstrologers: (id: string, params?: { sortBy?: string; page?: number; limit?: number }) => 
+            ['user-app', 'remedy-astrologers', id, params] as const,
         wallet: {
             all: ['user-app', 'wallet'] as const,
             summary: () => ['user-app', 'wallet', 'summary'] as const,

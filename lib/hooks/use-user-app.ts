@@ -10,6 +10,14 @@ export function useUserAstrologers() {
   });
 }
 
+export function useAstrologerProfile(id: string) {
+  return useQuery({
+    queryKey: queryKeys.userApp.astrologerProfile(id),
+    queryFn: () => UserAppService.getAstrologerById(id),
+    enabled: !!id,
+  });
+}
+
 export function useUserCourses() {
   return useQuery({
     queryKey: queryKeys.userApp.courses(),
@@ -17,10 +25,43 @@ export function useUserCourses() {
   });
 }
 
-export function useUserRemedies() {
+export function useMyEnrolledCourseIds() {
   return useQuery({
-    queryKey: queryKeys.userApp.remedies(),
-    queryFn: () => UserAppService.getRemedies(),
+    queryKey: queryKeys.userApp.enrolledCourses(),
+    queryFn: () => UserAppService.getMyEnrolledCourseIds(),
+  });
+}
+
+export function useUserRemedies(category?: string) {
+  return useQuery({
+    queryKey: queryKeys.userApp.remedies(category),
+    queryFn: () => UserAppService.getRemedies(category),
+  });
+}
+
+export function useRemedyDetail(id: string) {
+  return useQuery({
+    queryKey: queryKeys.userApp.remedyDetail(id),
+    queryFn: () => UserAppService.getRemedyById(id),
+    enabled: !!id,
+  });
+}
+
+export function useRemedyCategories() {
+  return useQuery({
+    queryKey: queryKeys.userApp.remedyCategories(),
+    queryFn: () => UserAppService.getRemedyCategories(),
+  });
+}
+
+export function useRemedyAstrologers(
+  remedyId: string,
+  params?: { sortBy?: string; page?: number; limit?: number }
+) {
+  return useQuery({
+    queryKey: queryKeys.userApp.remedyAstrologers(remedyId, params),
+    queryFn: () => UserAppService.getAstrologersForRemedy(remedyId, params),
+    enabled: !!remedyId,
   });
 }
 
