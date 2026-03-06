@@ -88,3 +88,14 @@ export function useUserActivity() {
         refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes
     });
 }
+
+/**
+ * Hook to fetch engagement statistics
+ */
+export function useEngagementStats(dateRange?: DateRange) {
+    return useQuery({
+        queryKey: ['dashboard', 'engagement', dateRange],
+        queryFn: () => DashboardService.getEngagementStats(dateRange),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+}

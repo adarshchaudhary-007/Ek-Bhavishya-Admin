@@ -36,10 +36,20 @@ export class AstrologerService {
 
     /**
      * Unsuspend an astrologer
-     * Endpoint: PATCH /api/v1/admin/astrologers/unsuspend
+     * Supports both general unsuspend and call-specific unsuspend
      */
     static async unsuspendAstrologer(data: UnsuspendAstrologerRequest): Promise<OperationResponse> {
         console.log('[AstrologerService] unsuspendAstrologer called with data:', data);
+
+        // If it's a call-specific unsuspend (POST /astrologers/:id/unsuspend)
+        if (data.adminNotes && !data.unsuspensionNotes) {
+            const response = await api.post<OperationResponse>(`/api/v1/admin/astrologers/${data.id}/unsuspend`, {
+                adminNotes: data.adminNotes
+            });
+            return response.data;
+        }
+
+        // General unsuspend (PATCH /api/v1/admin/astrologers/unsuspend)
         const response = await api.patch<OperationResponse>('/api/v1/admin/astrologers/unsuspend', data);
         console.log('[AstrologerService] unsuspendAstrologer response:', response.data);
         return response.data;

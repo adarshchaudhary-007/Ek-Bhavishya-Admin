@@ -1,30 +1,29 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { User, Mail, Lock, Camera, Save, X } from 'lucide-react'
+import { User, Mail, Lock, Camera, Save, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAdminProfile, useUpdateAdminProfile, useChangeAdminPassword } from '@/lib/hooks/use-admin'
 
 export default function AdminProfilePage() {
+    const { data: profileResponse, isLoading: isLoadingProfile } = useAdminProfile()
+    const updateProfileMutation = useUpdateAdminProfile()
+    const changePasswordMutation = useChangeAdminPassword()
+
     const [isEditingProfile, setIsEditingProfile] = useState(false)
     const [isChangingPassword, setIsChangingPassword] = useState(false)
 
-    // Static data - will be made dynamic later
-    const [profileData, setProfileData] = useState({
-        name: 'Admin User',
-        email: 'admin@example.com',
-        role: 'Super Admin',
-        avatar: ''
-    })
+    const admin = profileResponse?.admin || profileResponse?.data || profileResponse || {}
 
     const [profileForm, setProfileForm] = useState({
-        name: profileData.name,
-        email: profileData.email
+        name: '',
+        email: ''
     })
 
     const [passwordForm, setPasswordForm] = useState({
@@ -33,19 +32,28 @@ export default function AdminProfilePage() {
         confirmPassword: ''
     })
 
+    // Sync profile form with fetched data
+    useEffect(() => {
+        if (admin?.name || admin?.email) {
+            setProfileForm({
+                name: admin.name || '',
+                email: admin.email || ''
+            })
+        }
+    }, [admin?.name, admin?.email])
+
     const handleProfileUpdate = () => {
-        // TODO: Implement API call to update profile
-        setProfileData({
-            ...profileData,
-            name: profileForm.name,
-            email: profileForm.email
-        })
-        setIsEditingProfile(false)
-        toast.success('Profile updated successfully')
+        updateProfileMutation.mutate(
+            { name: profileForm.name, email: profileForm.email },
+            {
+                onSuccess: () => {
+                    setIsEditingProfile(false)
+                },
+            }
+        )
     }
 
     const handlePasswordChange = () => {
-        // Validation
         if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
             toast.error('All password fields are required')
             return
@@ -61,31 +69,39 @@ export default function AdminProfilePage() {
             return
         }
 
-        // TODO: Implement API call to change password
-        setPasswordForm({
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-        })
-        setIsChangingPassword(false)
-        toast.success('Password changed successfully')
+        changePasswordMutation.mutate(
+            {
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword,
+            },
+            {
+                onSuccess: () => {
+                    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+                    setIsChangingPassword(false)
+                },
+            }
+        )
     }
 
     const handleCancelEdit = () => {
         setProfileForm({
-            name: profileData.name,
-            email: profileData.email
+            name: admin?.name || '',
+            email: admin?.email || ''
         })
         setIsEditingProfile(false)
     }
 
     const handleCancelPasswordChange = () => {
-        setPasswordForm({
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-        })
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
         setIsChangingPassword(false)
+    }
+
+    if (isLoadingProfile) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
     }
 
     return (
@@ -114,9 +130,9 @@ export default function AdminProfilePage() {
                     {/* Avatar Section */}
                     <div className="flex items-center gap-6">
                         <Avatar className="h-24 w-24">
-                            <AvatarImage src={profileData.avatar} alt={profileData.name} />
+                            <AvatarImage src="" alt={admin?.name} />
                             <AvatarFallback className="text-2xl bg-primary/10">
-                                {profileData.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                {(admin?.name || 'A').split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
                         <div className="space-y-2">
@@ -139,7 +155,7 @@ export default function AdminProfilePage() {
                                 <Label htmlFor="name">Full Name</Label>
                                 <Input
                                     id="name"
-                                    value={isEditingProfile ? profileForm.name : profileData.name}
+                                    value={isEditingProfile ? profileForm.name : (admin?.name || '')}
                                     onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                                     disabled={!isEditingProfile}
                                 />
@@ -149,7 +165,7 @@ export default function AdminProfilePage() {
                                 <Input
                                     id="email"
                                     type="email"
-                                    value={isEditingProfile ? profileForm.email : profileData.email}
+                                    value={isEditingProfile ? profileForm.email : (admin?.email || '')}
                                     onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
                                     disabled={!isEditingProfile}
                                 />
@@ -160,7 +176,7 @@ export default function AdminProfilePage() {
                             <Label htmlFor="role">Role</Label>
                             <Input
                                 id="role"
-                                value={profileData.role}
+                                value={admin?.role || 'Admin'}
                                 disabled
                                 className="bg-muted"
                             />
@@ -174,11 +190,15 @@ export default function AdminProfilePage() {
                                 </Button>
                             ) : (
                                 <>
-                                    <Button onClick={handleProfileUpdate}>
-                                        <Save className="h-4 w-4 mr-2" />
+                                    <Button onClick={handleProfileUpdate} disabled={updateProfileMutation.isPending}>
+                                        {updateProfileMutation.isPending ? (
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <Save className="h-4 w-4 mr-2" />
+                                        )}
                                         Save Changes
                                     </Button>
-                                    <Button variant="outline" onClick={handleCancelEdit}>
+                                    <Button variant="outline" onClick={handleCancelEdit} disabled={updateProfileMutation.isPending}>
                                         <X className="h-4 w-4 mr-2" />
                                         Cancel
                                     </Button>
@@ -241,11 +261,15 @@ export default function AdminProfilePage() {
                             </div>
 
                             <div className="flex gap-2 pt-4">
-                                <Button onClick={handlePasswordChange}>
-                                    <Save className="h-4 w-4 mr-2" />
+                                <Button onClick={handlePasswordChange} disabled={changePasswordMutation.isPending}>
+                                    {changePasswordMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <Save className="h-4 w-4 mr-2" />
+                                    )}
                                     Update Password
                                 </Button>
-                                <Button variant="outline" onClick={handleCancelPasswordChange}>
+                                <Button variant="outline" onClick={handleCancelPasswordChange} disabled={changePasswordMutation.isPending}>
                                     <X className="h-4 w-4 mr-2" />
                                     Cancel
                                 </Button>
@@ -273,16 +297,18 @@ export default function AdminProfilePage() {
                             <p className="text-sm font-medium mt-1">Active</p>
                         </div>
                         <div>
-                            <Label className="text-muted-foreground">Member Since</Label>
-                            <p className="text-sm font-medium mt-1">January 2024</p>
-                        </div>
-                        <div>
-                            <Label className="text-muted-foreground">Last Login</Label>
-                            <p className="text-sm font-medium mt-1">Today at 10:30 AM</p>
+                            <Label className="text-muted-foreground">Role</Label>
+                            <p className="text-sm font-medium mt-1 capitalize">{admin?.role || 'admin'}</p>
                         </div>
                         <div>
                             <Label className="text-muted-foreground">Account ID</Label>
-                            <p className="text-sm font-medium mt-1 font-mono">ADM-12345</p>
+                            <p className="text-sm font-medium mt-1 font-mono">{admin?._id || admin?.id || '—'}</p>
+                        </div>
+                        <div>
+                            <Label className="text-muted-foreground">Member Since</Label>
+                            <p className="text-sm font-medium mt-1">
+                                {admin?.createdAt ? new Date(admin.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' }) : '—'}
+                            </p>
                         </div>
                     </div>
                 </CardContent>

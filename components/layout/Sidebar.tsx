@@ -17,6 +17,8 @@ import {
     ChevronLeft,
     ChevronRight,
     FileText,
+    Calendar,
+    Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -30,8 +32,12 @@ const sidebarItems = [
     { href: '/admin/courses', label: 'Courses', icon: GraduationCap },
     { href: '/admin/admin-courses', label: 'Admin Courses', icon: BookOpen },
     { href: '/admin/blogs', label: 'Blogs', icon: FileText },
+    { href: '/admin/remedies', label: 'Remedies', icon: Wand2 },
     { href: '/admin/notices', label: 'Notices', icon: Bell },
+    { href: '/admin/products', label: 'Products', icon: Store },
+    { href: '/admin/interviews', label: 'Interviews', icon: Calendar },
     { href: '/admin/calls', label: 'Calls & Reports', icon: Phone },
+    { href: '/admin/profile', label: 'Settings', icon: Settings },
 ];
 
 interface SidebarProps {

@@ -85,6 +85,18 @@ export class DashboardService {
         console.log('[DashboardService] getUserActivity response:', response.data);
         return response.data;
     }
+
+    /**
+     * Get engagement metrics (astrologer activity, hours, etc.)
+     */
+    static async getEngagementStats(dateRange?: DateRange): Promise<any> {
+        console.log('[DashboardService] getEngagementStats called with dateRange:', dateRange);
+        const response = await api.get<any>('/api/v1/admin/dashboard/engagement-stats', {
+            params: dateRange
+        });
+        console.log('[DashboardService] getEngagementStats response:', response.data);
+        return response.data;
+    }
 }
 
 // Export individual functions for easier importing
@@ -95,4 +107,5 @@ export const {
     getTopAstrologers,
     getDailyUsage,
     getUserActivity,
+    getEngagementStats,
 } = DashboardService;

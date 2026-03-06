@@ -18,13 +18,9 @@ export interface CourseSearchParams extends PaginationParams {
 }
 
 export class CourseService {
-    /**
-     * Get all courses with optional search and pagination
-     * Endpoint: GET /api/v1/admin/courses
-     */
     static async getAllCourses(params?: CourseSearchParams): Promise<CoursesResponse> {
         console.log('[CourseService] getAllCourses called with params:', params);
-        const response = await api.get<CoursesResponse>('/api/v1/admin/courses', { params });
+        const response = await api.get<CoursesResponse>('/api/v1/admin/courses/unified', { params });
         console.log('[CourseService] getAllCourses response:', response.data);
         return response.data;
     }
@@ -35,7 +31,7 @@ export class CourseService {
      */
     static async approveCourse(id: string): Promise<OperationResponse> {
         console.log('[CourseService] approveCourse called with id:', id);
-        const response = await api.patch<OperationResponse>(`/api/v1/admin/courses/${id}/approve`);
+        const response = await api.patch<OperationResponse>('/api/v1/admin/courses/approve', { id });
         console.log('[CourseService] approveCourse response:', response.data);
         return response.data;
     }
@@ -46,7 +42,8 @@ export class CourseService {
      */
     static async rejectCourse(id: string, rejectionReason: string): Promise<OperationResponse> {
         console.log('[CourseService] rejectCourse called with id:', id);
-        const response = await api.patch<OperationResponse>(`/api/v1/admin/courses/${id}/reject`, {
+        const response = await api.patch<OperationResponse>('/api/v1/admin/courses/reject', {
+            id,
             rejectionReason
         });
         console.log('[CourseService] rejectCourse response:', response.data);
@@ -69,13 +66,9 @@ export class CourseService {
         return response.data;
     }
 
-    /**
-     * Get all admin courses with pagination
-     * Endpoint: GET /api/v1/admin/courses/admin-courses/list
-     */
     static async getAdminCourses(params?: PaginationParams): Promise<CoursesResponse> {
         console.log('[CourseService] getAdminCourses called with params:', params);
-        const response = await api.get<CoursesResponse>('/api/v1/admin/courses/admin-courses/list', { params });
+        const response = await api.get<CoursesResponse>('/api/v1/admin/courses', { params });
         console.log('[CourseService] getAdminCourses response:', response.data);
         return response.data;
     }
