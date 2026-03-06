@@ -78,7 +78,7 @@ export class CourseService {
      */
     static async updateAdminCourse(data: UpdateCourseRequest): Promise<CourseResponse> {
         console.log('[CourseService] updateAdminCourse called with data:', data);
-        const response = await api.put<any>('/api/v1/admin/courses/admin-courses/update', data);
+        const response = await api.patch<any>('/api/v1/admin/courses/admin-courses/update', data);
         console.log('[CourseService] updateAdminCourse response:', response.data);
 
         // Normalize response to match expected CourseResponse interface
