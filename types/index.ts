@@ -479,23 +479,67 @@ export interface UserActivityResponse {
 
 // Astrologer Types
 export interface Astrologer {
-    _id: string;
+    _id: string
     personalDetails: {
-        name: string;
-        email: string;
-        phone: string;
-    };
-    status: 'Active' | 'Inactive' | 'Suspended' | 'Blocked';
-    isVerified: boolean;
-    rating: number;
-    totalEarnings: number;
-    createdAt: string;
+        name: string
+        email: string
+        phone: string
+        experience: number
+        languages: string[]
+        skills: string[]
+        pseudonym?: string
+        profileImage?: string
+        about?: string
+        gender?: string
+    }
+    ratings: {
+        average: number
+        count: number
+        negativeReviewsCount: number
+    }
+    pricing: {
+        call: number
+        chat: number
+        video: number
+    }
+    availability: {
+        status: string
+        currentStatus: string
+        isCallAvailable: boolean
+        isChatAvailable: boolean
+        isVideoAvailable: boolean
+        lastOnlineAt?: string
+        currentCallId?: string | null
+    }
+    callSettings?: {
+        audioCallRate: number
+        videoCallRate: number
+        acceptAudioCalls: boolean
+        acceptVideoCalls: boolean
+    }
+    verificationStatus: string
+    onboardingStatus: string
+    isApproved: boolean
+    walletBalance: number
+    isExclusive?: boolean
+    membershipOptions?: any[]
+    referral?: {
+        code: string
+        referredBy?: string | null
+        totalRewards: number
+    }
+    rejectionDetails?: {
+        date: string
+        reason: string
+    }
     suspensionInfo?: {
-        reason: string;
-        suspendedAt: string;
-        suspendUntil: string;
-        remainingDays: number;
-    };
+        reason: string
+        suspendedAt: string
+        suspendUntil: string
+        remainingDays: number
+    }
+    createdAt: string
+    updatedAt: string
 }
 
 export interface AstrologersResponse {

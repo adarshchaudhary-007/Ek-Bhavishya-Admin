@@ -72,11 +72,16 @@ export default function AdminDashboard() {
     }
 
     const dashboardData: any = stats?.data || {};
-    const revenueStats = revenueResponse?.data || { totalRevenue: 0, growth: 0, chartData: [] };
+    const revenueStats = revenueResponse?.data || { 
+        totalRevenue: 0, 
+        growth: 0, 
+        chartData: [],
+        periodStats: { totalRevenue: 0, growth: 0, growthPercentage: 0 }
+    };
     const consultationStats = consultationResponse?.data || { totalConsultations: 0, todayConsultations: 0, averageRating: 4.8, completionRate: 0 };
     const engagementData = engagementResponse?.data || { activeAstrologers: { active: 0, total: 0, rate: 0 }, engagementHours: { totalHours: 0, avgPerDay: 0 }, topEngagedAstrologers: [] };
 
-    const revenueGrowth = revenueStats.periodStats?.growth || 0;
+    const revenueGrowth = revenueStats.periodStats?.growth || revenueStats.growth || 0;
 
     const revenueChartData = revenueStats.chartData?.map((item: any) => ({
         name: format(new Date(item.date), 'MMM dd'),
@@ -108,8 +113,8 @@ export default function AdminDashboard() {
             doc.text('Revenue Statistics', 20, 50);
             doc.setFontSize(10);
             doc.text(`Total Revenue: ₹${(revenueStats.totalRevenue || 0).toLocaleString()}`, 30, 58);
-            doc.text(`Monthly Revenue: ₹${(revenueStats.periodRevenue || 0).toLocaleString()}`, 30, 64);
-            doc.text(`Growth: +${revenueStats.growth || 0}%`, 30, 70);
+            doc.text(`Monthly Revenue: ₹${(revenueStats.periodStats?.totalRevenue || revenueStats.totalRevenue || 0).toLocaleString()}`, 30, 64);
+            doc.text(`Growth: +${revenueStats.periodStats?.growth || revenueStats.growth || 0}%`, 30, 70);
 
             // Dashboard Stats
             doc.setFontSize(14);
@@ -377,22 +382,24 @@ export default function AdminDashboard() {
                                         {['Chat', 'Call', 'Video'].map((type, i) => {
                                             const channelValues = [200, 189, 208];
                                             return (
-                                                <div key={type} className="flex items-center justify-between text-xs">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: ['#059669', '#10b981', '#34d399'][i] }} />
-                                                        <span className="font-bold text-emerald-900/60 uppercase">{type}</span>
+                                                <>
+                                                    <div key={type} className="flex items-center justify-between text-xs">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: ['#059669', '#10b981', '#34d399'][i] }} />
+                                                            <span className="font-bold text-emerald-900/60 uppercase">{type}</span>
+                                                        </div>
+                                                        <span className="font-black text-emerald-950 tabular-nums">
+                                                            {channelValues[i]}
+                                                        </span>
                                                     </div>
                                                     <span className="font-black text-emerald-950 tabular-nums">
-                                                        {channelValues[i]}
+                                                        {i === 0 ? (consultationStats.channelBreakdown?.chat || 200) :
+                                                            i === 1 ? (consultationStats.channelBreakdown?.call || 189) :
+                                                                (consultationStats.channelBreakdown?.video || 208)}
                                                     </span>
-                                                </div>
-                                                <span className="font-black text-emerald-950 tabular-nums">
-                                                    {i === 0 ? (consultationStats.channelBreakdown?.chat || 200) :
-                                                        i === 1 ? (consultationStats.channelBreakdown?.call || 189) :
-                                                            (consultationStats.channelBreakdown?.video || 208)}
-                                                </span>
-                                            </div>
-                                        ))}
+                                                </>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
